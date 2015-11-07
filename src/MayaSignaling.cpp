@@ -34,7 +34,7 @@ const char kPeerID[] = "peerid";
 
 
 class MayaSignaling : public MayaSignalingInterface{
-#define SIGNALING_BUFFER_SIZE 4096
+#define SIGNALING_BUFFER_SIZE 16384
 
 	private:
 		int signalingSocket;

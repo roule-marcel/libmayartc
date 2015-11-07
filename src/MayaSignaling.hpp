@@ -11,8 +11,6 @@
 #include "RTCSignaling.hpp"
 
 
-#define SIGNALING_BUFFER_SIZE 4096
-
 namespace maya{
 
 class MayaSignalingInterface : public RTCSignalingChannel{
