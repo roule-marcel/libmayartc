@@ -156,9 +156,11 @@ cricket::VideoCapturer* RTCPeer::OpenVideoCaptureDevice(){
 }
 
 RTCChannelInterface* RTCPeer::registerChannel(const char* name, int reliable){
+	pthread_mutex_lock(&mutex);
 	RTCChannel *channel = new RTCChannel((char*)name, reliable);
 
 	channels[std::string(name, strlen(name))] = channel;
+	pthread_mutex_unlock(&mutex);
 
 	return channel;
 }
