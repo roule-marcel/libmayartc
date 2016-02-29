@@ -8,14 +8,18 @@
 #ifndef RTCCHANNEL_HPP_
 #define RTCCHANNEL_HPP_
 
-#include "talk/app/webrtc/datachannelinterface.h"
+#include "webrtc/api/datachannelinterface.h"
+#include "webrtc/api/mediastreaminterface.h"
+
 
 
 #include "RTCChannelInterface.hpp"
 
 namespace maya{
 
-class RTCChannel : public RTCChannelInterface, public webrtc::DataChannelObserver{
+class MemoryRenderer;
+
+class RTCChannel : public RTCChannelInterface, public webrtc::DataChannelObserver, public FrameObserver {
 
 	private:
 		webrtc::DataChannelInterface *channel;
@@ -24,9 +28,12 @@ class RTCChannel : public RTCChannelInterface, public webrtc::DataChannelObserve
 		int reliable;
 		ReceiveCallback recv_cb;
 		void * recv_cb_data;
+		StreamCallback stream_cb;
+		void* stream_cb_data;
 		char *negociationMessage;
 		int negociationMessageSize;
 		bool negociated;
+		MemoryRenderer* memoryRenderer;
 
 		void doSetDataChannel(webrtc::DataChannelInterface *channel);
 
@@ -42,16 +49,21 @@ class RTCChannel : public RTCChannelInterface, public webrtc::DataChannelObserve
 		void unsetDataChannel();
 
 		void setDataChannel(webrtc::DataChannelInterface *channel);
+		void setStream(webrtc::MediaStreamInterface *stream);
 
 		// The data channel state have changed.
 		virtual void OnStateChange();
 		//  A data buffer was successfully received.
 		virtual void OnMessage(const webrtc::DataBuffer& buffer);
 
+		// A frame was successfully received from a Stream
+		virtual void onFrame(unsigned char* argb, int w, int h);
+
 		virtual bool isConnected();
 		virtual void sendData(const char* buffer, int bufferSize);
 		virtual void setNegociationMessage(char * buffer, int bufferSize);
 		virtual void registerReceiveCallback(ReceiveCallback cb, void * userData);
+		virtual void registerStreamCallback(StreamCallback cb, void * userData);
 
 		virtual void close();
 };

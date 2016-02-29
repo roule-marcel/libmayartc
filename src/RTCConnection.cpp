@@ -8,11 +8,11 @@
 #include "RTCConnection.hpp"
 #include "RTCPeer.hpp"
 
-#include "talk/app/webrtc/jsep.h"
-#include "talk/app/webrtc/peerconnectioninterface.h"
+#include "webrtc/api/jsep.h"
+#include "webrtc/api/peerconnectioninterface.h"
 
 #include "RTCChannel.hpp"
-
+#include "MemoryRenderer.hpp"
 
 
 namespace maya{
@@ -59,6 +59,10 @@ SimpleConstraints * RTCConnection::getMediaConstraints(){
 
 	constraints->AddMandatory("kEnableSctpDataChannels", "true");
 
+	constraints->AddMandatory("OfferToReceiveAudio", "true");
+	constraints->AddMandatory("OfferToReceiveVideo", "true");
+
+
 	return constraints;
 }
 
@@ -74,16 +78,26 @@ void RTCConnection::OnDataChannel(webrtc::DataChannelInterface* data_channel){
 	std::cout << data_channel->label() << std::endl;
 }
 
+// jfellus 26/02/2016
+// Triggered when a remote peer opens a stream.
+void RTCConnection::OnAddStream(webrtc::MediaStreamInterface* stream) {
+	printf("ADD STREAM : %s !!\n", stream->label().c_str());
+
+	RTCChannel* channel = static_cast<RTCChannel*>(peer->getChannelForStream(stream->label()));
+	if(!channel) {fprintf(stderr, "No channel registered for stream %s\n", stream->label().c_str()); return; }
+
+	channel->setStream(stream);
+}
+//
+
+
 // New Ice candidate have been found.
 void RTCConnection::OnIceCandidate(const webrtc::IceCandidateInterface* candidate){
-
-	std::cout << "Local ICE Candidate" <<std::endl;
 
 	std::string sdp_mid = candidate->sdp_mid();
 	int sdp_mlineindex = candidate->sdp_mline_index();
 	std::string sdp;
 	if (!candidate->ToString(&sdp)) {
-		//Cannot serialize candidate
 		return;
 	}
 
@@ -146,8 +160,7 @@ rtc::scoped_refptr<webrtc::DataChannelInterface> RTCConnection::createDataChanne
 }
 
 void RTCConnection::createOffer(){
-	peerConnection->CreateOffer(this, NULL);
-	printf("CreateOffer\n");
+	peerConnection->CreateOffer(this, getMediaConstraints());
 }
 
 void RTCConnection::setRemoteSessionDescription(webrtc::SessionDescriptionInterface* session_description){

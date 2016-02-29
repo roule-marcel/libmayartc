@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include "RTCChannel.hpp"
+#include "MemoryRenderer.hpp"
 
 namespace maya{
 
@@ -18,6 +19,8 @@ RTCChannel::RTCChannel(char * name, int reliable){
 	this->negociated = false;
 	this->negociationMessage = NULL;
 	this->nextChannel = NULL;
+	this->stream_cb = NULL;
+	this->stream_cb_data = NULL;
 }
 
 RTCChannel::~RTCChannel(){
@@ -31,6 +34,23 @@ char * RTCChannel::getName(){
 int RTCChannel::isReliable(){
 	return reliable;
 }
+
+
+void RTCChannel::setStream(webrtc::MediaStreamInterface *stream) {
+	// TODO : Handle [0] out of bound
+	rtc::scoped_refptr<webrtc::VideoTrackInterface> track = stream->GetVideoTracks()[0];
+
+	if(memoryRenderer) {delete memoryRenderer; memoryRenderer = NULL;}
+	memoryRenderer = new MemoryRenderer();
+	memoryRenderer->setFrameObserver(this);
+
+	track->AddRenderer(memoryRenderer);
+}
+
+void RTCChannel::onFrame(unsigned char* frame, int w, int h) {
+	if(stream_cb) stream_cb(frame, w, h, stream_cb_data);
+}
+
 
 void RTCChannel::unsetDataChannel(){
 	if(channel != NULL){
@@ -134,6 +154,14 @@ void RTCChannel::registerReceiveCallback(ReceiveCallback cb, void * userData){
 	this->recv_cb = cb;
 	this->recv_cb_data = userData;
 }
+
+void RTCChannel::registerStreamCallback(StreamCallback cb, void * userData) {
+	printf("ouch\n");
+	this->stream_cb = cb;
+	this->stream_cb_data = userData;
+	printf("ouch\n");
+}
+
 
 void RTCChannel::close(){
 	this->channel->Close();

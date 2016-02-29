@@ -15,14 +15,14 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/stringencode.h"
 
-#include "talk/media/devices/devicemanager.h"
-#include "talk/media/base/videocapturer.h"
+#include "webrtc/media/devices/devicemanager.h"
+#include "webrtc/media/base/videocapturer.h"
 
-#include "talk/app/webrtc/jsep.h"
-#include "talk/app/webrtc/mediaconstraintsinterface.h"
-#include "talk/app/webrtc/peerconnectioninterface.h"
-#include "talk/app/webrtc/datachannelinterface.h"
-#include "talk/app/webrtc/videosourceinterface.h"
+#include "webrtc/api/jsep.h"
+#include "webrtc/api/mediaconstraintsinterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
+#include "webrtc/api/datachannelinterface.h"
+#include "webrtc/api/videosourceinterface.h"
 
 #include "RTCPeer.hpp"
 
@@ -88,6 +88,8 @@ void RTCPeer::disconnect(){
 }
 
 void RTCPeer::join(){
+	printf("RTC join\n"); sleep(3); // jfellus
+
 	signalingChannel->join();
 }
 
@@ -302,6 +304,7 @@ void RTCPeer::onConnectionRequest(int peerid, std::vector<std::string> channelna
 }
 
 void RTCPeer::onRemoteICECandidate(int peerid, std::string sdp_mid, int sdp_mlineindex, std::string sdp){
+	if(sdp_mid == "" && sdp_mlineindex == 0 && sdp == "") return;
 
 	RTCConnection *connection = getConnection(peerid);
 
@@ -315,6 +318,25 @@ void RTCPeer::onRemoteICECandidate(int peerid, std::string sdp_mid, int sdp_mlin
 
 	connection->addICECandidate(candidate.get());
 }
+
+// jfellus 26/02/2016
+void RTCPeer::addChannelStreamMapping(int peerid, std::string channel, std::string stream) {
+	printf("ADD CHANNEL STREAM MAPPING %s -> %s \n", stream.c_str(), channel.c_str());
+	this->channelsStreamsMappings[stream] = channel;
+}
+
+RTCChannelInterface* RTCPeer::getChannelForStream(std::string stream) {
+	try {
+		std::string channelname = this->channelsStreamsMappings.at(stream);
+		return this->channels.at(channelname);
+	} catch(std::out_of_range &error) {
+		std::cerr << "no channel found for stream \"" << stream <<"\"" << std::endl;
+		return NULL;
+	}
+}
+
+
+//
 
 void RTCPeer::onMessage(int peerid, const char * msg, int msglength){	}
 

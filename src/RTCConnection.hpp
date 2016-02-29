@@ -9,7 +9,7 @@
 #define RTCCONNECTION_HPP_
 
 
-#include "talk/app/webrtc/peerconnectioninterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
 
 #include "RTCCommon.hpp"
 
@@ -39,8 +39,6 @@ class RTCConnection : public webrtc::PeerConnectionObserver, webrtc::CreateSessi
 		// Triggered when SignalingState or IceState have changed.
 		// TODO(bemasc): Remove once callers transition to OnSignalingChange.
 		virtual void OnStateChange(StateType state_changed) {}
-		// Triggered when media is received on a new stream from remote peer.
-		virtual void OnAddStream(webrtc::MediaStreamInterface* stream) {}
 		// Triggered when a remote peer close a stream.
 		virtual void OnRemoveStream(webrtc::MediaStreamInterface* stream){}
 		// Triggered when renegotiation is needed, for example the ICE has restarted.
@@ -55,8 +53,10 @@ class RTCConnection : public webrtc::PeerConnectionObserver, webrtc::CreateSessi
 
 
 		// Triggered when a remote peer opens a data channel.
-		// TODO(perkj): Make pure virtual.
 		virtual void OnDataChannel(webrtc::DataChannelInterface* data_channel);
+
+		// Triggered when media is received on a new stream from remote peer.
+		virtual void OnAddStream(webrtc::MediaStreamInterface* stream);
 
 		// New Ice candidate have been found.
 		virtual void OnIceCandidate(const webrtc::IceCandidateInterface* candidate);

@@ -34,7 +34,7 @@ CFLAGS=-fstack-protector -O3 --param=ssp-buffer-size=4 -pthread \
     -Wno-missing-field-initializers -pipe -fPIC -pthread -Wno-format \
     -Wno-unused-result -fno-ident -fdata-sections -ffunction-sections \
     -funwind-tables -fno-rtti -fno-threadsafe-statics -Wno-deprecated
-    
+
 WEBRTC_LIBS=$(shell find ${WEBRTC_BIN}/ -name "*.a" | grep -v test | grep -v do_not_use)
 
 LIBRARIES=-lgthread-2.0 -lrt -lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lgio-2.0 \
@@ -55,7 +55,7 @@ all: build/Main build/cmain
 
 sigrun:
 	node test/server.js
-	
+
 
 run:
 	./build/Main
@@ -68,26 +68,26 @@ prepare-package:
 	cp build/libmayartc.so dist/libmayartc/usr/lib/
 	mkdir -p dist/libmayartc/usr/include
 	mkdir -p dist/libmayartc/usr/include/mayartc/
-	cp src/*.h* dist/libmayartc/usr/include/mayartc/	
+	cp src/*.h* dist/libmayartc/usr/include/mayartc/
 
 build/Main: build/obj/Main.o build/libmayartc.so
-	g++ ${DEBUG} ${LDFLAGS} -Lbuild/ build/obj/Main.o -o build/Main -lmayartc
-	
-build/cmain: build/libmayartc.so src/main.c
-	gcc -Lbuild/ -o build/cmain src/main.c -lmayartc
+	g++ ${DEBUG} ${LDFLAGS} -Lbuild/ build/obj/Main.o -o build/Main -lmayartc -ljpeg
 
-build/libmayartc.a: build/obj/RTCPeer.o build/obj/RTCSignaling.o build/obj/MayaSignaling.o build/obj/RTCConnection.o build/obj/RTCChannel.o
+build/cmain: build/libmayartc.so src/main.c
+	gcc -Lbuild/ -o build/cmain src/main.c -lmayartc -ljpeg
+
+build/libmayartc.a: build/obj/RTCPeer.o build/obj/RTCSignaling.o build/obj/MayaSignaling.o build/obj/RTCConnection.o build/obj/RTCChannel.o build/obj/MemoryRenderer.o
 	ar rvs $@ $^ ${WEBRTC_LIBS}
 
-build/libmayartc.so: build/obj/RTCPeer.o build/obj/RTCSignaling.o build/obj/MayaSignaling.o build/obj/RTCConnection.o build/obj/RTCChannel.o build/obj/MemoryVideoCapturer.o build/obj/cwrapper.o
-	g++ ${DEBUG} ${LDFLAGS} $^ -Wl,--start-group ${WEBRTC_LIBS} -Wl,--end-group ${LIBRARIES} -shared -o $@
+build/libmayartc.so: build/obj/RTCPeer.o build/obj/RTCSignaling.o build/obj/MayaSignaling.o build/obj/RTCConnection.o build/obj/RTCChannel.o build/obj/MemoryVideoCapturer.o build/obj/cwrapper.o build/obj/MemoryRenderer.o
+	g++ ${DEBUG} ${LDFLAGS} $^ -Wl,--start-group ${WEBRTC_LIBS} -Wl,--end-group ${LIBRARIES} -shared -o $@ -ljpeg
 
 build/obj/%.o: src/%.cpp
 	g++ ${DEBUG} ${CXXFLAGS} $< -c -o $@
 
 build/deps/%: src/%.cpp
 	g++ ${INCLUDES} ${DEFINES} -H $<
-	
+
 -include $(shell find ./build/ -name "*.d")
 
 

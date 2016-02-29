@@ -10,7 +10,8 @@
 
 namespace maya{
 
-typedef void (*ReceiveCallback)(float* buffer, int bufferSize, void * userData);
+	typedef void (*ReceiveCallback)(float* buffer, int bufferSize, void * userData);
+	typedef void (*StreamCallback)(unsigned char* buffer, int w, int h, void * userData);
 
 class RTCChannelInterface{
 
@@ -22,7 +23,13 @@ class RTCChannelInterface{
 		virtual void sendData(const char* buffer, int bufferSize) = 0;
 		virtual void setNegociationMessage(char * buffer, int bufferSize) = 0;
 		virtual void registerReceiveCallback(ReceiveCallback cb, void* userData) = 0;
+		virtual void registerStreamCallback(StreamCallback cb, void* userData) = 0;
 		virtual void close() = 0;
+};
+
+class FrameObserver {
+public:
+	virtual void onFrame(unsigned char* argb, int w, int h) = 0;
 };
 
 }

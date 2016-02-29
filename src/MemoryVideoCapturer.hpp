@@ -2,7 +2,7 @@
 #define __MEMORYVIDEOCAPTURER_H
 
 
-#include "talk/media/base/videocapturer.h"
+#include "webrtc/media/base/videocapturer.h"
 
 
 namespace maya{

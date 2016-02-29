@@ -13,6 +13,8 @@
 
 #include <iostream>
 #include <thread>
+#include <unordered_map>
+
 
 #include "webrtc/base/json.h"
 
@@ -208,7 +210,11 @@ class MayaSignaling : public MayaSignalingInterface{
 				processICECandidate(peerid, jmessage);
 			}else if(func.compare("Answer") == 0){
 				processAnswer(peerid, jmessage);
+			// jfellus 26/02/2016
+			}else if(func.compare("ChannelsStreams") == 0) {
+				processChannelsStreams(peerid, jmessage);
 			}
+			//
 		}
 
 		void processListChannels(int peerid, Json::Value message){
@@ -262,6 +268,22 @@ class MayaSignaling : public MayaSignalingInterface{
 			getPeer()->onRemoteSDP(peerid, type, sdp);
 
 		}
+
+		// jfellus 26/02/2016
+		void processChannelsStreams(int peerId, Json::Value message) {
+			std::vector<Json::Value> _v_mappings;
+
+			rtc::JsonArrayToValueVector(message["mappings"], &_v_mappings);
+			for(int i=0; i<_v_mappings.size(); i++) {
+				std::string channel;
+				std::string stream;
+				rtc::GetStringFromJsonObject(_v_mappings[i], "channel", &channel);
+				rtc::GetStringFromJsonObject(_v_mappings[i], "stream", &stream);
+				getPeer()->addChannelStreamMapping(peerId, channel, stream);
+			}
+
+		}
+		//
 
 		virtual void sendLocalSDP(int peerid, std::string type, std::string sdp){
 

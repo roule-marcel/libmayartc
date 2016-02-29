@@ -7,7 +7,7 @@
 #include <unordered_map>
 
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "talk/app/webrtc/peerconnectioninterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
 
 #include "RTCConnection.hpp"
 #include "RTCSignaling.hpp"
@@ -29,6 +29,10 @@ class RTCConnection;
 		std::unordered_map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface> > streams;
 		RTCSignalingChannel *signalingChannel;
 		std::unordered_map<std::string, RTCChannel*> channels;
+
+		// jfellus 26/02/2016
+		std::unordered_map<std::string, std::string> channelsStreamsMappings;
+		//
 
 		rtc::Thread* sig_thread;
 		rtc::Thread* worker_thread;
@@ -63,6 +67,11 @@ class RTCConnection;
 		void onRemoteICECandidate(int peerid, std::string sdp_mid, int sdp_mlineindex, std::string sdp);
 		void onMessage(int peerid, const char * msg, int msglength);
 		void onConnectionRequest(int peerid, std::vector<std::string> channels);
+
+		// jfellus 26/02/2016
+		void addChannelStreamMapping(int peerid, std::string channel, std::string stream);
+		RTCChannelInterface* getChannelForStream(std::string stream);
+		//
 
 		std::vector<std::string> getChannelNames();
 
