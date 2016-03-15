@@ -40,6 +40,7 @@ class MayaSignaling : public MayaSignalingInterface{
 
 	private:
 		int signalingSocket;
+		bool isStarted;
 		bool isConnected;
 		std::thread signalingThread;
 		bool signalingContinue;
@@ -84,6 +85,7 @@ class MayaSignaling : public MayaSignalingInterface{
 			signalingSocket(-1),
 			signalingContinue(false),
 			isConnected(false),
+			isStarted(false),
 			stopMutex(PTHREAD_MUTEX_INITIALIZER),
 			startMutex(PTHREAD_MUTEX_INITIALIZER){
 
@@ -94,11 +96,9 @@ class MayaSignaling : public MayaSignalingInterface{
 		}
 
 		virtual void start() {
-
 			isConnected = tryconnect();
-
 			signalingContinue = true;
-
+			
 			pthread_mutex_lock(&startMutex);
 
 			signalingThread = std::thread([&](){
@@ -107,12 +107,17 @@ class MayaSignaling : public MayaSignalingInterface{
 
 			pthread_mutex_lock(&startMutex);
 			pthread_mutex_unlock(&startMutex);
+			isStarted = true;
 		}
 		virtual void stop() {
+			if (!isStarted) return ;
+
 			pthread_mutex_lock(&stopMutex);
 			signalingContinue = false;
 			pthread_mutex_lock(&stopMutex);
+			isStarted = false;
 			pthread_mutex_unlock(&stopMutex);
+			
 		}
 
 		virtual void join(){

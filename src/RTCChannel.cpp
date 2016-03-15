@@ -156,10 +156,8 @@ void RTCChannel::registerReceiveCallback(ReceiveCallback cb, void * userData){
 }
 
 void RTCChannel::registerStreamCallback(StreamCallback cb, void * userData) {
-	printf("ouch\n");
 	this->stream_cb = cb;
 	this->stream_cb_data = userData;
-	printf("ouch\n");
 }
 
 
