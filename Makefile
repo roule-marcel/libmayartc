@@ -76,10 +76,10 @@ build/Main: build/obj/Main.o build/libmayartc.so
 build/cmain: build/libmayartc.so src/main.c
 	gcc -Lbuild/ -o build/cmain src/main.c -lmayartc -ljpeg
 
-build/libmayartc.a: build/obj/RTCPeer.o build/obj/RTCSignaling.o build/obj/MayaSignaling.o build/obj/RTCConnection.o build/obj/RTCChannel.o build/obj/MemoryRenderer.o
+build/libmayartc.a: build/obj/RTCPeer.o build/obj/RTCSignaling.o build/obj/MayaSignaling.o build/obj/RTCConnection.o build/obj/RTCChannel.o build/obj/MemoryRenderer.o build/obj/MemoryCapturer.o build/obj/RTCStream.o
 	ar rvs $@ $^ ${WEBRTC_LIBS}
 
-build/libmayartc.so: build/obj/RTCPeer.o build/obj/RTCSignaling.o build/obj/MayaSignaling.o build/obj/RTCConnection.o build/obj/RTCChannel.o build/obj/MemoryVideoCapturer.o build/obj/cwrapper.o build/obj/MemoryRenderer.o
+build/libmayartc.so: build/obj/RTCPeer.o build/obj/RTCSignaling.o build/obj/MayaSignaling.o build/obj/RTCConnection.o build/obj/RTCChannel.o build/obj/cwrapper.o build/obj/MemoryRenderer.o build/obj/MemoryCapturer.o build/obj/RTCStream.o
 	g++ ${DEBUG} ${LDFLAGS} $^ -Wl,--start-group ${WEBRTC_LIBS} -Wl,--end-group ${LIBRARIES} -shared -o $@ -ljpeg
 
 build/obj/%.o: src/%.cpp

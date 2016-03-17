@@ -34,7 +34,6 @@ namespace maya{
 
 const char kAudioLabel[] = "audio_label";
 const char kVideoLabel[] = "video_label";
-const char kStreamLabel[] = "stream_label";
 
 /*============================================================*/
 /*============================================================*/
@@ -102,59 +101,12 @@ void RTCPeer::createPeerConnectionFactory(){
 	peerConnectionFactory = webrtc::CreatePeerConnectionFactory(worker_thread, sig_thread, NULL, NULL, NULL);
 }
 
-void RTCPeer::createStreams(){
-	rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-			peerConnectionFactory->CreateAudioTrack(kAudioLabel, peerConnectionFactory->CreateAudioSource(NULL)));
-
-	rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
-			peerConnectionFactory->CreateVideoTrack(kVideoLabel,peerConnectionFactory->CreateVideoSource(OpenVideoCaptureDevice(), NULL)));
-
-	//  <---- can start local renderer here if needed
-
-	rtc::scoped_refptr<webrtc::MediaStreamInterface> stream(peerConnectionFactory->CreateLocalMediaStream(kStreamLabel));
-
-	stream->AddTrack(audio_track);
-	stream->AddTrack(video_track);
-
-	streams["video"] = stream;
-}
-
-
-
-cricket::VideoCapturer* RTCPeer::OpenVideoCaptureDevice(){
-	rtc::scoped_ptr<cricket::DeviceManagerInterface> dev_manager(cricket::DeviceManagerFactory::Create());
-
-	if (!dev_manager->Init()) {
-		LOG(LS_ERROR) << "Can't create device manager";
-		return NULL;
-	}
-
-	std::vector<cricket::Device> devs;
-
-	if (!dev_manager->GetVideoCaptureDevices(&devs)) {
-		LOG(LS_ERROR) << "Can't enumerate video devices";
-		return NULL;
-	}
-
-	std::vector<cricket::Device>::iterator dev_it = devs.begin();
-	cricket::VideoCapturer* capturer = NULL;
-
-	for (; dev_it != devs.end(); ++dev_it) {
-		std::cout << "Video device found" << std::endl;
-		capturer = dev_manager->CreateVideoCapturer(*dev_it);
-
-		/*if (capturer != NULL){
-			cricket::VideoFormat f;
-			f.Construct(480,270,200000,cricket::FOURCC_ANY);
-
-			capturer->video_adapter()->SetOutputFormat(f);
-			capturer->video_adapter()->set_cpu_adaptation(false);
-			std::cout << capturer->enable_video_adapter() << std::endl;
-			break;
-		}*/
-	}
-
-	return capturer;
+RTCStreamInterface* RTCPeer::registerStream(const char* name, uint w, uint h){
+	pthread_mutex_lock(&mutex);
+	RTCStream* stream = new RTCStream(name, w, h);
+	streams[std::string(name, strlen(name))] = stream;
+	pthread_mutex_unlock(&mutex);
+	return stream;
 }
 
 RTCChannelInterface* RTCPeer::registerChannel(const char* name, int reliable){
@@ -204,7 +156,6 @@ RTCConnection * RTCPeer::getConnection(int peerid){
 		connection = new rtc::RefCountedObject<RTCConnection>(this, peerConnectionFactory, peerid);
 		connection->AddRef();
 		connections[peerid] = connection;
-		//connection->addStream(streams["video"]);
 	}
 	pthread_mutex_unlock(&mutexConnection);
 	return connection;
@@ -228,6 +179,10 @@ void RTCPeer::onSignalingThreadStopped(){
 	connections.clear();
 
 	for(auto kv : channels){
+		delete kv.second;
+	}
+
+	for(auto kv : streams) {
 		delete kv.second;
 	}
 
@@ -294,10 +249,19 @@ void RTCPeer::onConnectionRequest(int peerid, std::vector<std::string> channelna
 	//Create new Connection
 	RTCConnection *connection = getConnection(peerid);
 
+	// Attach data channels
 	for(int i=0; i<requestedChannels.size(); i++){
-
 		rtc::scoped_refptr<webrtc::DataChannelInterface> wch = connection->createDataChannel(requestedChannels[i]->getName(), requestedChannels[i]->isReliable());
 		requestedChannels[i]->setDataChannel(wch);
+	}
+
+	// Attach outgoing streams
+	for(int i=0;i<channelnames.size();i++){
+		try {
+			RTCStream* stream = this->streams.at(channelnames[i]);
+			stream->init(peerConnectionFactory, worker_thread);
+			connection->addStream(stream->getStream());
+		} catch(std::out_of_range &error){}
 	}
 
 	connection->createOffer();

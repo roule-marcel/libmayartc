@@ -10,6 +10,7 @@
 
 #include "RTCSignaling.hpp"
 #include "RTCChannelInterface.hpp"
+#include "RTCStreamInterface.hpp"
 
 namespace maya{
 
@@ -21,6 +22,8 @@ namespace maya{
 			static RTCPeerInterface * create(RTCSignalingChannel *signalingChannel);
 
 			virtual RTCChannelInterface* registerChannel(const char* name, int reliable) = 0;
+			virtual RTCStreamInterface* registerStream(const char* name, uint w, uint h) = 0;
+
 			virtual void join() = 0;
 	};
 

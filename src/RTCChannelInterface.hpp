@@ -21,6 +21,7 @@ class RTCChannelInterface{
 
 		virtual bool isConnected() = 0;
 		virtual void sendData(const char* buffer, int bufferSize) = 0;
+
 		virtual void setNegociationMessage(char * buffer, int bufferSize) = 0;
 		virtual void registerReceiveCallback(ReceiveCallback cb, void* userData) = 0;
 		virtual void registerStreamCallback(StreamCallback cb, void* userData) = 0;

@@ -13,6 +13,7 @@
 #include "RTCSignaling.hpp"
 #include "RTCCommon.hpp"
 #include "RTCChannel.hpp"
+#include "RTCStream.hpp"
 
 #include "RTCPeerInterface.hpp"
 
@@ -26,9 +27,9 @@ class RTCConnection;
 		rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peerConnectionFactory;
 
 		std::unordered_map<int, rtc::RefCountedObject<RTCConnection>*> connections;
-		std::unordered_map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface> > streams;
 		RTCSignalingChannel *signalingChannel;
 		std::unordered_map<std::string, RTCChannel*> channels;
+		std::unordered_map<std::string, RTCStream*> streams;
 
 		// jfellus 26/02/2016
 		std::unordered_map<std::string, std::string> channelsStreamsMappings;
@@ -47,13 +48,12 @@ class RTCConnection;
 		void createPeerConnectionFactory();
 
 		RTCSignalingChannel * getSignalingChannel();
-		void createStreams();
-		cricket::VideoCapturer* OpenVideoCaptureDevice();
 		void deleteConnection(int peerid);
 		RTCConnection * getConnection(int peerid);
 		virtual void join();
 		bool offerChannel(webrtc::DataChannelInterface *channel);
 		virtual RTCChannelInterface* registerChannel(const char* name, int reliable);
+		virtual RTCStreamInterface* registerStream(const char* name, uint w, uint h);
 
 
 		void disconnect();
