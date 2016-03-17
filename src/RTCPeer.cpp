@@ -190,6 +190,7 @@ void RTCPeer::onSignalingThreadStopped(){
 
 	peerConnectionFactory = NULL;
 
+
 	//std::cout << "[ OK ]" << std::endl;
 }
 
