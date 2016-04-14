@@ -9,13 +9,14 @@
 #define MEMORYRENDERER_HPP_
 
 #include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/media/base/videosinkinterface.h"
 
 
 namespace maya {
 
 class FrameObserver;
 
-class MemoryRenderer : public webrtc::VideoRendererInterface {
+class MemoryRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
 public:
 	int w,h;
 	unsigned char* argb;
@@ -25,7 +26,7 @@ public:
 	virtual ~MemoryRenderer();
 
 	void setSize(int w, int h);
-	void RenderFrame(const cricket::VideoFrame* frame);
+	void OnFrame(const cricket::VideoFrame& frame);
 
 	void setFrameObserver(FrameObserver* o);
 };

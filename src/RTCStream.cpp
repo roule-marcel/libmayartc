@@ -7,7 +7,6 @@
 
 #include "RTCStream.hpp"
 #include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/videosourceinterface.h"
 
 namespace maya{
 
@@ -22,8 +21,8 @@ void RTCStream::init(rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> 
 	if(this->capturer) return;
 
 	this->capturer = new MemoryCapturer(thread, w,h);
-	rtc::scoped_refptr<webrtc::VideoSourceInterface> source(peerConnectionFactory->CreateVideoSource(capturer, NULL));
-	rtc::scoped_refptr<webrtc::VideoTrackInterface> track(peerConnectionFactory->CreateVideoTrack(name,source));
+	
+	rtc::scoped_refptr<webrtc::VideoTrackInterface> track(peerConnectionFactory->CreateVideoTrack(name,peerConnectionFactory->CreateVideoSource(capturer, NULL)));
 	stream = peerConnectionFactory->CreateLocalMediaStream(name);
 	stream->AddTrack(track);
 }

@@ -10,11 +10,9 @@
 
 #include "RTCStreamInterface.hpp"
 #include "MemoryCapturer.hpp"
-#include "webrtc/media/devices/devicemanager.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/api/videosourceinterface.h"
 
 namespace maya{
 

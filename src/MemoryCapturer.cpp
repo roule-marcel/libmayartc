@@ -16,7 +16,7 @@ namespace maya {
 
 
 MemoryCapturer::MemoryCapturer(rtc::Thread* thread, uint w, uint h)
-	: cricket::VideoCapturer(thread), running_(false),
+	: cricket::VideoCapturer(), running_(false),
 	initial_unix_timestamp_(time(NULL) * rtc::kNumNanosecsPerSec),
 	next_timestamp_(rtc::kNumNanosecsPerMillisec),
 	is_screencast_(false),

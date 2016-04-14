@@ -15,14 +15,12 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/stringencode.h"
 
-#include "webrtc/media/devices/devicemanager.h"
 #include "webrtc/media/base/videocapturer.h"
 
 #include "webrtc/api/jsep.h"
 #include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/datachannelinterface.h"
-#include "webrtc/api/videosourceinterface.h"
 
 #include "RTCPeer.hpp"
 

@@ -7,6 +7,9 @@
 
 #include <iostream>
 
+#include "webrtc/media/base/videosourceinterface.h"
+#include "webrtc/base/copyonwritebuffer.h"
+
 #include "RTCChannel.hpp"
 #include "MemoryRenderer.hpp"
 
@@ -44,7 +47,7 @@ void RTCChannel::setStream(webrtc::MediaStreamInterface *stream) {
 	memoryRenderer = new MemoryRenderer();
 	memoryRenderer->setFrameObserver(this);
 
-	track->AddRenderer(memoryRenderer);
+	track->AddOrUpdateSink(memoryRenderer, rtc::VideoSinkWants());
 }
 
 void RTCChannel::onFrame(unsigned char* frame, int w, int h) {
@@ -145,7 +148,7 @@ bool RTCChannel::isConnected(){
 
 void RTCChannel::sendData(const char* buffer, int bufferSize){
 	if(!this->negociated) return ;
-	if(!this->channel->Send(webrtc::DataBuffer(rtc::Buffer(buffer, bufferSize),true))){
+	if(!this->channel->Send(webrtc::DataBuffer(rtc::CopyOnWriteBuffer(buffer, bufferSize),true))){
 		std::cerr << "cannot send buffer (size:" << bufferSize << ")" << std::endl;
 	}
 }
