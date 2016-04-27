@@ -70,6 +70,7 @@ class MayaSignaling : public MayaSignalingInterface{
 			len = strlen(remote.sun_path) + sizeof(remote.sun_family);
 
 			if (connect(signalingSocket, (struct sockaddr *)&remote, len) == -1) {
+				close(signalingSocket);
 				return false;
 			}
 
