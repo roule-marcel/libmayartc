@@ -8,6 +8,7 @@
 #ifndef RTCCONNECTION_HPP_
 #define RTCCONNECTION_HPP_
 
+#include <ctime>
 
 #include "webrtc/api/peerconnectioninterface.h"
 
@@ -23,6 +24,7 @@ class RTCConnection : public webrtc::PeerConnectionObserver, webrtc::CreateSessi
 		int peerID;
 		rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection;
 		RTCPeer *peer;
+		std::time_t createOfferTimestamp;
 
 
 	public :
@@ -79,13 +81,14 @@ class RTCConnection : public webrtc::PeerConnectionObserver, webrtc::CreateSessi
 
 		int getPeerID();
 
+		bool hasTimeoutExpired();
+
 		rtc::scoped_refptr<webrtc::DataChannelInterface> createDataChannel(char *name, int reliable);
-		void createOffer();
+		void createOffer(std::string turn_url, std::string turn_username, std::string turn_password);
 
 		void setRemoteSessionDescription(webrtc::SessionDescriptionInterface* session_description);
 		void addStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream);
 		void addICECandidate(webrtc::IceCandidateInterface *candidate);
-		webrtc::PeerConnectionInterface::IceServers getIceServers();
 		SimpleConstraints * getMediaConstraints();
 
 };

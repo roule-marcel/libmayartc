@@ -48,6 +48,7 @@ class RTCConnection;
 		void createPeerConnectionFactory();
 
 		RTCSignalingChannel * getSignalingChannel();
+		void cleanConnections();
 		void deleteConnection(int peerid);
 		RTCConnection * getConnection(int peerid);
 		virtual void join();
@@ -66,7 +67,7 @@ class RTCConnection;
 		void onRemoteSDP(int peerid, std::string type, std::string sdp);
 		void onRemoteICECandidate(int peerid, std::string sdp_mid, int sdp_mlineindex, std::string sdp);
 		void onMessage(int peerid, const char * msg, int msglength);
-		void onConnectionRequest(int peerid, std::vector<std::string> channels);
+		void onConnectionRequest(int peerid, std::vector<std::string> channels, std::string turn_url, std::string turn_username, std::string turn_password);
 
 		// jfellus 26/02/2016
 		void addChannelStreamMapping(int peerid, std::string channel, std::string stream);

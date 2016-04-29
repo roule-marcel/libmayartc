@@ -5,6 +5,8 @@
  *      Author: sylvain
  */
 
+#include <ctime>
+
 #include "RTCConnection.hpp"
 #include "RTCPeer.hpp"
 
@@ -14,15 +16,17 @@
 #include "RTCChannel.hpp"
 #include "MemoryRenderer.hpp"
 
+#define RTCCONNECTION_OFFER_TIMEOUT 20
+
 
 namespace maya{
 
 RTCConnection::RTCConnection(RTCPeer *peer, webrtc::PeerConnectionFactoryInterface * peerConnectionFactory, int peerID){
 	this->peerID = peerID;
 	this->peer = peer;
+	this->createOfferTimestamp = -1;
 
 	webrtc::PeerConnectionInterface::RTCConfiguration config;
-	//config.servers = getIceServers();
 
 	this->peerConnection = peerConnectionFactory->CreatePeerConnection(config, getMediaConstraints(), NULL, NULL, this);
 }
@@ -32,20 +36,6 @@ RTCConnection::~RTCConnection(){
 	std::cout << "RTCConnection closed !" << std::endl;
 }
 
-webrtc::PeerConnectionInterface::IceServers RTCConnection::getIceServers(){
-	webrtc::PeerConnectionInterface::IceServers servers;
-
-	webrtc::PeerConnectionInterface::IceServer googleServer;
-	googleServer.password = std::string("",0);
-	std::string uri = "stun:stun.l.google.com:19302";
-	//std::string uri = "stun:stun.services.mozilla.com/";
-	googleServer.uri = uri;
-	googleServer.username = std::string("", 0);
-
-	servers.push_back(googleServer);
-
-	return servers;
-}
 SimpleConstraints * RTCConnection::getMediaConstraints(){
 	SimpleConstraints * constraints = new SimpleConstraints;
 
@@ -105,7 +95,8 @@ void RTCConnection::OnIceCandidate(const webrtc::IceCandidateInterface* candidat
 }
 
 void RTCConnection::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state){
-	if(new_state == webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected){
+	if(new_state == webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected
+		|| new_state == webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionFailed){
 		peer->deleteConnection(peerID);
 	}
 }
@@ -142,6 +133,19 @@ int RTCConnection::getPeerID(){
 	return peerID;
 }
 
+bool RTCConnection::hasTimeoutExpired() {
+	if(createOfferTimestamp == -1) { return false; }
+	std::time_t currentTime = std::time(NULL);
+
+	if(currentTime - createOfferTimestamp > RTCCONNECTION_OFFER_TIMEOUT && 
+		peerConnection->ice_connection_state() != webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionConnected &&
+		peerConnection->ice_connection_state() != webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionCompleted) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 
 rtc::scoped_refptr<webrtc::DataChannelInterface> RTCConnection::createDataChannel(char *name, int reliable){
 
@@ -154,12 +158,23 @@ rtc::scoped_refptr<webrtc::DataChannelInterface> RTCConnection::createDataChanne
 
 	rtc::scoped_refptr<webrtc::DataChannelInterface> ch = peerConnection->CreateDataChannel(std::string(name,strlen(name)), init);
 
-
-
 	return ch;
 }
 
-void RTCConnection::createOffer(){
+void RTCConnection::createOffer(std::string turn_url, std::string turn_username, std::string turn_password){
+	createOfferTimestamp = std::time(NULL);
+	webrtc::PeerConnectionInterface::RTCConfiguration config;
+	webrtc::PeerConnectionInterface::IceServers servers;
+
+	webrtc::PeerConnectionInterface::IceServer turnserver;
+	turnserver.uri = turn_url;
+	turnserver.username = turn_username;
+	turnserver.password = turn_password;
+
+	servers.push_back(turnserver);
+	
+	config.servers = servers;
+	peerConnection->SetConfiguration(config);
 	peerConnection->CreateOffer(this, getMediaConstraints());
 }
 

@@ -128,8 +128,21 @@ bool RTCPeer::offerChannel(webrtc::DataChannelInterface *channel){
 	}
 }
 
+//look for garbage connections and remove them
+void RTCPeer::cleanConnections() {
+	
+	for(auto kv : connections){
+		if(kv.second->hasTimeoutExpired()) {
+			deleteConnection(kv.second->getPeerID());			
+		}
+	}
+	
+}
+
 void RTCPeer::deleteConnection(int peerid){
 	rtc::RefCountedObject<RTCConnection> *connection;
+
+	std::cout << "active connections before :" << connections.size() << std::endl;
 
 	pthread_mutex_lock(&mutexConnection);
 
@@ -141,6 +154,8 @@ void RTCPeer::deleteConnection(int peerid){
 	}catch(std::out_of_range& error){
 	}
 	pthread_mutex_unlock(&mutexConnection);
+	
+	std::cout << "active connections after :" << connections.size() << std::endl;
 }
 
 RTCConnection * RTCPeer::getConnection(int peerid){
@@ -193,6 +208,7 @@ void RTCPeer::onSignalingThreadStopped(){
 }
 
 void RTCPeer::processMessages(){
+	cleanConnections();
 	sig_thread->ProcessMessages(10);
 	//worker_thread->ProcessMessages(10);
 }
@@ -225,7 +241,7 @@ std::vector<std::string> RTCPeer::getChannelNames(){
 	return ret;
 }
 
-void RTCPeer::onConnectionRequest(int peerid, std::vector<std::string> channelnames) {
+void RTCPeer::onConnectionRequest(int peerid, std::vector<std::string> channelnames, std::string turn_url, std::string turn_username, std::string turn_password) {
 
 	std::vector<RTCChannel*> requestedChannels;
 
@@ -263,7 +279,7 @@ void RTCPeer::onConnectionRequest(int peerid, std::vector<std::string> channelna
 		} catch(std::out_of_range &error){}
 	}
 
-	connection->createOffer();
+	connection->createOffer(turn_url, turn_username, turn_password);
 }
 
 void RTCPeer::onRemoteICECandidate(int peerid, std::string sdp_mid, int sdp_mlineindex, std::string sdp){

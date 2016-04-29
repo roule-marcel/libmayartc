@@ -35,7 +35,7 @@ class RTCSignalingChannelPeer{
 		virtual void onMessage(int peerid, const char * message, int length) = 0;
 		virtual void onRemoteSDP(int peerid, std::string type, std::string sdp) = 0;
 		virtual void onRemoteICECandidate(int peerid, std::string sdp_mid, int sdp_mlineindex, std::string sdp) = 0;
-		virtual void onConnectionRequest(int peerid, std::vector<std::string> channels) = 0;
+		virtual void onConnectionRequest(int peerid, std::vector<std::string> channels, std::string turn_url, std::string turn_username, std::string turn_password) = 0;
 
 		// jfellus 26/02/2016
 		virtual void addChannelStreamMapping(int peerid, std::string channel, std::string stream) = 0;

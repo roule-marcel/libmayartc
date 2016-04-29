@@ -256,11 +256,19 @@ class MayaSignaling : public MayaSignalingInterface{
 		}
 
 		void processConnect(int peerid, Json::Value message){
-
 			std::vector<std::string> channels;
+			Json::Value turn;
+			std::string turn_url;
+			std::string turn_username;
+			std::string turn_password;
 			rtc::JsonArrayToStringVector(message["channels"], &channels);
 
-			getPeer()->onConnectionRequest(peerid, channels);
+			rtc::GetValueFromJsonObject(message, "turn", &turn);
+			rtc::GetStringFromJsonObject(turn, "url", &turn_url);
+			rtc::GetStringFromJsonObject(turn, "username", &turn_username);
+			rtc::GetStringFromJsonObject(turn, "password", &turn_password);
+
+			getPeer()->onConnectionRequest(peerid, channels, turn_url, turn_username, turn_password);
 		}
 
 		void processAnswer(int peerid, Json::Value message){
