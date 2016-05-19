@@ -1,3 +1,6 @@
+CXX=g++-4.8
+CC=gcc-4.8
+
 WEBRTC_TRUNK=/home/$(USER)/libs/webrtc/src
 
 DEFINES=-DWEBRTC_POSIX -DV8_DEPRECATION_WARNINGS -DEXPAT_RELATIVE_PATH \
@@ -71,22 +74,22 @@ prepare-package:
 	cp src/*.h* dist/libmayartc/usr/include/mayartc/
 
 build/Main: build/obj/Main.o build/libmayartc.so
-	g++ ${DEBUG} ${LDFLAGS} -Lbuild/ build/obj/Main.o -o build/Main -lmayartc -ljpeg
+	${CXX} ${DEBUG} ${LDFLAGS} -Lbuild/ build/obj/Main.o -o build/Main -lmayartc -ljpeg 
 
 build/cmain: build/libmayartc.so src/main.c
-	gcc -Lbuild/ -o build/cmain src/main.c -lmayartc -ljpeg
+	${CC} -Lbuild/ -o build/cmain src/main.c -lmayartc -ljpeg
 
 build/libmayartc.a: build/obj/RTCPeer.o build/obj/RTCSignaling.o build/obj/MayaSignaling.o build/obj/RTCConnection.o build/obj/RTCChannel.o build/obj/MemoryRenderer.o build/obj/MemoryCapturer.o build/obj/RTCStream.o
 	ar rvs $@ $^ ${WEBRTC_LIBS}
 
 build/libmayartc.so: build/obj/RTCPeer.o build/obj/RTCSignaling.o build/obj/MayaSignaling.o build/obj/RTCConnection.o build/obj/RTCChannel.o build/obj/cwrapper.o build/obj/MemoryRenderer.o build/obj/MemoryCapturer.o build/obj/RTCStream.o
-	g++ ${DEBUG} ${LDFLAGS} $^ -Wl,--start-group ${WEBRTC_LIBS} -Wl,--end-group ${LIBRARIES} -shared -o $@ -ljpeg
+	${CXX} ${DEBUG} ${LDFLAGS} $^ -Wl,--start-group ${WEBRTC_LIBS} -Wl,--end-group ${LIBRARIES} -shared -o $@ -ljpeg
 
 build/obj/%.o: src/%.cpp
-	g++ ${DEBUG} ${CXXFLAGS} $< -c -o $@
+	${CXX} ${DEBUG} ${CXXFLAGS} $< -c -o $@
 
 build/deps/%: src/%.cpp
-	g++ ${INCLUDES} ${DEFINES} -H $<
+	${CXX} ${INCLUDES} ${DEFINES} -H $<
 
 -include $(shell find ./build/ -name "*.d")
 
