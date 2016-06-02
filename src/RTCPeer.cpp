@@ -2,6 +2,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <vector>
 #include <stdexcept>
 #include <unistd.h>
 
@@ -76,12 +77,16 @@ void RTCPeer::disconnect(){
 		kv.second->unsetDataChannel();
 	}
 
+	pthread_mutex_lock(&mutexConnection);
+
 	for(auto kv : connections){
 		kv.second->close();
 		kv.second->Release();
 	}
 
 	connections.clear();
+
+	pthread_mutex_unlock(&mutexConnection);
 }
 
 void RTCPeer::join(){
@@ -130,12 +135,20 @@ bool RTCPeer::offerChannel(webrtc::DataChannelInterface *channel){
 
 //look for garbage connections and remove them
 void RTCPeer::cleanConnections() {
-	
+	std::vector<int> garbageConnections;
+
+	pthread_mutex_lock(&mutexConnection);	
 	for(auto kv : connections){
 		if(kv.second->hasTimeoutExpired()) {
-			deleteConnection(kv.second->getPeerID());			
+			garbageConnections.push_back(kv.second->getPeerID());			
 		}
 	}
+
+	for(int i=0; i<garbageConnections.size(); i++) {
+		connections.erase(garbageConnections[i]);
+	}
+
+	pthread_mutex_unlock(&mutexConnection);
 	
 }
 
@@ -144,8 +157,6 @@ void RTCPeer::deleteConnection(int peerid){
 
 	std::cout << "active connections before :" << connections.size() << std::endl;
 
-	pthread_mutex_lock(&mutexConnection);
-
 	try{
 		connection = connections.at(peerid);
 		connection->Release();
@@ -153,7 +164,6 @@ void RTCPeer::deleteConnection(int peerid){
 
 	}catch(std::out_of_range& error){
 	}
-	pthread_mutex_unlock(&mutexConnection);
 	
 	std::cout << "active connections after :" << connections.size() << std::endl;
 }
@@ -182,14 +192,16 @@ void RTCPeer::onSignalingThreadStarted(){
 	createPeerConnectionFactory();
 }
 
-void RTCPeer::onSignalingThreadStopped(){
+void RTCPeer::onSignalingThreadStopped() {
 	//std::cout << "deleting RTCPeer... " << std::endl;
 
+	pthread_mutex_lock(&mutexConnection);
 	for(auto kv : connections){
 		kv.second->Release();
 	}
 
 	connections.clear();
+	pthread_mutex_unlock(&mutexConnection);
 
 	for(auto kv : channels){
 		delete kv.second;
@@ -205,6 +217,12 @@ void RTCPeer::onSignalingThreadStopped(){
 
 
 	//std::cout << "[ OK ]" << std::endl;
+}
+
+void RTCPeer::onConnectionClosed(int peerId) {
+	pthread_mutex_lock(&mutexConnection);
+	deleteConnection(peerId);
+	pthread_mutex_unlock(&mutexConnection);
 }
 
 void RTCPeer::processMessages(){

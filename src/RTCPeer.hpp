@@ -61,6 +61,7 @@ class RTCConnection;
 
 		void onSignalingThreadStarted();
 		void onSignalingThreadStopped();
+		void onConnectionClosed(int peerId);
 		void processMessages();
 
 		void onStateChanged(RTCSignalingChannelState state);

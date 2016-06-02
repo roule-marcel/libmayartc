@@ -32,7 +32,10 @@ RTCConnection::RTCConnection(RTCPeer *peer, webrtc::PeerConnectionFactoryInterfa
 }
 
 RTCConnection::~RTCConnection(){
-	peerConnection->Close();
+	if(peerConnection.get() != NULL) {
+		peerConnection->Close();
+		peerConnection = NULL;
+	}
 	std::cout << "RTCConnection closed !" << std::endl;
 }
 
@@ -127,6 +130,7 @@ void RTCConnection::OnFailure(const std::string& error){
 
 void RTCConnection::close(){
 	peerConnection->Close();
+	peerConnection = NULL;
 }
 
 int RTCConnection::getPeerID(){
@@ -137,7 +141,7 @@ bool RTCConnection::hasTimeoutExpired() {
 	if(createOfferTimestamp == -1) { return false; }
 	std::time_t currentTime = std::time(NULL);
 
-	if(currentTime - createOfferTimestamp > RTCCONNECTION_OFFER_TIMEOUT && 
+	if(peerConnection.get() != NULL && currentTime - createOfferTimestamp > RTCCONNECTION_OFFER_TIMEOUT && 
 		peerConnection->ice_connection_state() != webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionConnected &&
 		peerConnection->ice_connection_state() != webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionCompleted) {
 		return true;
