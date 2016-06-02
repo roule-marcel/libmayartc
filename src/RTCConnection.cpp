@@ -100,7 +100,7 @@ void RTCConnection::OnIceCandidate(const webrtc::IceCandidateInterface* candidat
 void RTCConnection::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state){
 	if(new_state == webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected
 		|| new_state == webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionFailed){
-		peer->deleteConnection(peerID);
+		peer->onConnectionClosed(peerID);
 	}
 }
 
