@@ -6,9 +6,9 @@
 #include "webrtc/media/base/videoframe.h"
 
 
-#include "jpg.h"
+#include "../util/jpg.h"
 
-namespace maya {
+namespace webrtcpp {
 
 MemoryRenderer::MemoryRenderer() {
 	w = h = 0;
@@ -16,9 +16,7 @@ MemoryRenderer::MemoryRenderer() {
 	this->frameObserver = NULL;
 }
 
-MemoryRenderer::~MemoryRenderer() {
-
-}
+MemoryRenderer::~MemoryRenderer() { }
 
 void MemoryRenderer::setSize(int w, int h) {
 	this->w = w; this->h = h;
@@ -27,8 +25,6 @@ void MemoryRenderer::setSize(int w, int h) {
 
 
 void MemoryRenderer::OnFrame(const cricket::VideoFrame& frame) {
-	//if(!frame) return;
-
 	const cricket::VideoFrame* rotatedFrame = frame.GetCopyWithRotationApplied();
 	setSize(static_cast<int>(rotatedFrame->GetWidth()), static_cast<int>(rotatedFrame->GetHeight()));
 

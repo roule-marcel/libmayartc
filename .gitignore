@@ -1,3 +1,5 @@
+/.*
+
 # Compiled Object files
 *.slo
 *.lo
@@ -27,3 +29,5 @@
 *.out
 *.app
 /lib/
+/bin/
+/build/

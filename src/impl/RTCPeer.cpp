@@ -6,73 +6,55 @@
 #include <stdexcept>
 #include <unistd.h>
 
-#include "webrtc/base/helpers.h"
-#include "webrtc/base/json.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/ssladapter.h"
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/stringencode.h"
-
-#include "webrtc/media/base/videocapturer.h"
-
-#include "webrtc/api/jsep.h"
-#include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/api/datachannelinterface.h"
+#include <webrtc/base/helpers.h>
+#include <webrtc/base/json.h>
+#include <webrtc/base/logging.h>
+#include <webrtc/base/ssladapter.h>
+#include <webrtc/base/basictypes.h>
+#include <webrtc/base/refcount.h>
+#include <webrtc/base/scoped_ptr.h>
+#include <webrtc/base/scoped_ref_ptr.h>
+#include <webrtc/base/stringencode.h>
+#include <webrtc/media/base/videocapturer.h>
+#include <webrtc/api/jsep.h>
+#include <webrtc/api/mediaconstraintsinterface.h>
+#include <webrtc/api/peerconnectioninterface.h>
+#include <webrtc/api/datachannelinterface.h>
 
 #include "RTCPeer.hpp"
 
-namespace maya{
+namespace webrtcpp {
 
-/*============================================================*/
-/*======================CONSTANTS=============================*/
-/*============================================================*/
+///////////////
+// CONSTANTS //
+///////////////
 
 const char kAudioLabel[] = "audio_label";
 const char kVideoLabel[] = "video_label";
 
-/*============================================================*/
-/*============================================================*/
-/*============================================================*/
+
+
+
+// Initialize SSL
+void initRTC(){ rtc::InitializeSSL(); }
+void destroyRTC(){ rtc::CleanupSSL(); }
 
 
 
 
-//Initialize SSL
-void initRTC(){
-	rtc::InitializeSSL();
-}
-
-void destroyRTC(){
-	rtc::CleanupSSL();
-}
-
-
-
-
-RTCPeer::RTCPeer(RTCSignalingChannel *signalingChannel){
+RTCPeer::RTCPeer(SignalingChannelInterface *signalingChannel){
 	this->signalingChannel = signalingChannel;
-
-	signalingChannel->setPeer(this);
+	signalingChannel->peer = this;
 
 	mutex = PTHREAD_MUTEX_INITIALIZER;
 	mutexConnection = PTHREAD_MUTEX_INITIALIZER;
 }
 
+RTCPeer::~RTCPeer() { }
 
+SignalingChannelInterface * RTCPeer::getSignalingChannel(){ return signalingChannel; }
 
-RTCPeer::~RTCPeer(){
-
-}
-
-RTCSignalingChannel * RTCPeer::getSignalingChannel(){
-	return signalingChannel;
-}
-
-void RTCPeer::disconnect(){
+void RTCPeer::disconnect() {
 	for(auto kv : channels){
 		kv.second->unsetDataChannel();
 	}
@@ -89,14 +71,9 @@ void RTCPeer::disconnect(){
 	pthread_mutex_unlock(&mutexConnection);
 }
 
-void RTCPeer::join(){
-	printf("RTC join\n"); sleep(3); // jfellus
-
-	signalingChannel->join();
-}
+void RTCPeer::join() { signalingChannel->join(); }
 
 void RTCPeer::createPeerConnectionFactory(){
-
 	sig_thread = rtc::ThreadManager::Instance()->WrapCurrentThread();
 	worker_thread = new rtc::Thread;
 	worker_thread->Start();
@@ -123,17 +100,17 @@ RTCChannelInterface* RTCPeer::registerChannel(const char* name, int reliable){
 }
 
 bool RTCPeer::offerChannel(webrtc::DataChannelInterface *channel){
-	try{
+	try {
 		RTCChannel *ch = channels.at(channel->label());
 		if(ch->isConnected()) return false;
 		ch->setDataChannel(channel);
 		return true;
-	}catch(std::out_of_range& ex){
+	} catch(std::out_of_range& ex){
 		return false;
 	}
 }
 
-//look for garbage connections and remove them
+// look for garbage connections and remove them
 void RTCPeer::cleanConnections() {
 	std::vector<int> garbageConnections;
 
@@ -157,30 +134,29 @@ void RTCPeer::deleteConnection(int peerid){
 
 	std::cout << "active connections before :" << connections.size() << std::endl;
 
-	try{
+	try {
 		connection = connections.at(peerid);
 		connection->Release();
 		connections.erase(peerid);
 
-	}catch(std::out_of_range& error){
-	}
+	} catch(std::out_of_range& error) { }
 	
 	std::cout << "active connections after :" << connections.size() << std::endl;
 }
 
 RTCConnection * RTCPeer::getConnection(int peerid){
-
 	rtc::RefCountedObject<RTCConnection> *connection;
 
 	pthread_mutex_lock(&mutexConnection);
-	try{
+	try {
 		connection = connections.at(peerid);
-	}catch(std::out_of_range& error){
+	} catch(std::out_of_range& error){
 		connection = new rtc::RefCountedObject<RTCConnection>(this, peerConnectionFactory, peerid);
 		connection->AddRef();
 		connections[peerid] = connection;
 	}
 	pthread_mutex_unlock(&mutexConnection);
+
 	return connection;
 }
 
@@ -193,30 +169,17 @@ void RTCPeer::onSignalingThreadStarted(){
 }
 
 void RTCPeer::onSignalingThreadStopped() {
-	//std::cout << "deleting RTCPeer... " << std::endl;
-
 	pthread_mutex_lock(&mutexConnection);
-	for(auto kv : connections){
-		kv.second->Release();
-	}
-
+	for(auto kv : connections) kv.second->Release();
 	connections.clear();
 	pthread_mutex_unlock(&mutexConnection);
 
-	for(auto kv : channels){
-		delete kv.second;
-	}
-
-	for(auto kv : streams) {
-		delete kv.second;
-	}
+	for(auto kv : channels) delete kv.second;
+	for(auto kv : streams) delete kv.second;
 
 	channels.clear();
 
 	peerConnectionFactory = NULL;
-
-
-	//std::cout << "[ OK ]" << std::endl;
 }
 
 void RTCPeer::onConnectionClosed(int peerId) {
@@ -231,12 +194,9 @@ void RTCPeer::processMessages(){
 	//worker_thread->ProcessMessages(10);
 }
 
-void RTCPeer::onStateChanged(RTCSignalingChannelState state){
+void RTCPeer::onStateChanged(RTCSignalingChannelState state) {}
 
-}
-
-void RTCPeer::onRemoteSDP(int peerid, std::string type, std::string sdp){
-
+void RTCPeer::onRemoteSDP(int peerid, std::string type, std::string sdp) {
 	RTCConnection* connection = getConnection(peerid);
 
 	webrtc::SessionDescriptionInterface* session_description = webrtc::CreateSessionDescription(type, sdp, NULL);
@@ -248,38 +208,31 @@ void RTCPeer::onRemoteSDP(int peerid, std::string type, std::string sdp){
 	connection->setRemoteSessionDescription(session_description);
 }
 
-std::vector<std::string> RTCPeer::getChannelNames(){
-
+std::vector<std::string> RTCPeer::getChannelNames() {
 	std::vector<std::string> ret;
-
-	for(auto kv : this->channels){
-		ret.push_back(kv.first);
-	}
-
+	for(auto kv : this->channels) ret.push_back(kv.first);
 	return ret;
 }
 
 void RTCPeer::onConnectionRequest(int peerid, std::vector<std::string> channelnames, std::string turn_url, std::string turn_username, std::string turn_password) {
-
 	std::vector<RTCChannel*> requestedChannels;
-
-	for(int i=0;i<channelnames.size();i++){
-		try{
+	for(int i=0;i<channelnames.size();i++) {
+		try {
 			RTCChannel * ch = this->channels.at(channelnames[i]);
 			//TODO : check is the channel is already connected or not
 			requestedChannels.push_back(ch);
-		}catch(std::out_of_range &error){
+		} catch(std::out_of_range &error){
 			std::cerr << "no channel found for \"" << channelnames[i] <<"\"" << std::endl;
 		}
 	}
 
-	//If no channel is requested or no valid channel names are provided, abort connection attempt
+	// If no channel is requested or no valid channel names are provided, abort connection attempt
 	if(requestedChannels.size() <= 0){
 		printf("connect : no match !\n");
 		return ;
 	}
 
-	//Create new Connection
+	// Create new Connection
 	RTCConnection *connection = getConnection(peerid);
 
 	// Attach data channels
@@ -300,7 +253,7 @@ void RTCPeer::onConnectionRequest(int peerid, std::vector<std::string> channelna
 	connection->createOffer(turn_url, turn_username, turn_password);
 }
 
-void RTCPeer::onRemoteICECandidate(int peerid, std::string sdp_mid, int sdp_mlineindex, std::string sdp){
+void RTCPeer::onRemoteICECandidate(int peerid, std::string sdp_mid, int sdp_mlineindex, std::string sdp) {
 	if(sdp_mid == "" && sdp_mlineindex == 0 && sdp == "") return;
 
 	RTCConnection *connection = getConnection(peerid);
@@ -316,7 +269,6 @@ void RTCPeer::onRemoteICECandidate(int peerid, std::string sdp_mid, int sdp_mlin
 	connection->addICECandidate(candidate.get());
 }
 
-// jfellus 26/02/2016
 void RTCPeer::addChannelStreamMapping(int peerid, std::string channel, std::string stream) {
 	printf("ADD CHANNEL STREAM MAPPING %s -> %s \n", stream.c_str(), channel.c_str());
 	this->channelsStreamsMappings[stream] = channel;
@@ -332,18 +284,14 @@ RTCChannelInterface* RTCPeer::getChannelForStream(std::string stream) {
 	}
 }
 
-
-//
-
-void RTCPeer::onMessage(int peerid, const char * msg, int msglength){	}
+void RTCPeer::onMessage(int peerid, const char * msg, int msglength) {	}
 
 
-
-//Factory for RTCPeer
+// Factory for RTCPeer
 RTCPeerInterface* RTCPeerInterface::create(RTCSignalingChannel *signalingChannel){
 	RTCPeer *p = new RTCPeer(signalingChannel);
 	return p;
 }
 
 
-} //NAMESPACE MAYA
+}

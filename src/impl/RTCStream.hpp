@@ -8,13 +8,14 @@
 #ifndef RTCSTREAM_HPP_
 #define RTCSTREAM_HPP_
 
-#include "RTCStreamInterface.hpp"
+#include <string>
+#include "../api/RTCStreamInterface.hpp"
 #include "MemoryCapturer.hpp"
-#include "webrtc/media/base/videocapturer.h"
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/peerconnectioninterface.h"
+#include <webrtc/media/base/videocapturer.h>
+#include <webrtc/api/mediastreaminterface.h>
+#include <webrtc/api/peerconnectioninterface.h>
 
-namespace maya{
+namespace webrtcpp {
 
 class RTCStream : public RTCStreamInterface {
 	private:

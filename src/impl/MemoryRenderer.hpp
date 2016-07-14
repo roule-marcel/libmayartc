@@ -8,11 +8,11 @@
 #ifndef MEMORYRENDERER_HPP_
 #define MEMORYRENDERER_HPP_
 
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/media/base/videosinkinterface.h"
+#include <webrtc/api/mediastreaminterface.h>
+#include <webrtc/media/base/videosinkinterface.h>
 
 
-namespace maya {
+namespace webrtcpp {
 
 class FrameObserver;
 
@@ -21,6 +21,7 @@ public:
 	int w,h;
 	unsigned char* argb;
 	FrameObserver* frameObserver;
+
 public:
 	MemoryRenderer();
 	virtual ~MemoryRenderer();

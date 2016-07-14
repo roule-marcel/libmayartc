@@ -10,30 +10,22 @@
 
 #include <iostream>
 
-#include "webrtc/api/mediaconstraintsinterface.h"
+#include <webrtc/api/mediaconstraintsinterface.h>
 
-namespace maya{
+namespace webrtcpp {
 
-/*============================================================*/
-/*=======================HELPER CLASSES=======================*/
-/*============================================================*/
+////////////////////
+// HELPER CLASSES //
+////////////////////
 
 class SimpleConstraints : public webrtc::MediaConstraintsInterface {
 	public:
 		SimpleConstraints() {}
 		virtual ~SimpleConstraints() {}
-		virtual const Constraints& GetMandatory() const {
-			return mandatory_;
-		}
-		virtual const Constraints& GetOptional() const {
-			return optional_;
-		}
-		template <class T> void AddMandatory(const std::string& key, const T& value) {
-			mandatory_.push_back(Constraint(key, rtc::ToString<T>(value)));
-		}
-		template <class T> void AddOptional(const std::string& key, const T& value) {
-			optional_.push_back(Constraint(key, rtc::ToString<T>(value)));
-		}
+		virtual const Constraints& GetMandatory() const { return mandatory_; }
+		virtual const Constraints& GetOptional() const { return optional_; }
+		template <class T> void AddMandatory(const std::string& key, const T& value) { mandatory_.push_back(Constraint(key, rtc::ToString<T>(value))); }
+		template <class T> void AddOptional(const std::string& key, const T& value) { optional_.push_back(Constraint(key, rtc::ToString<T>(value))); }
 	private:
 		Constraints mandatory_;
 		Constraints optional_;
@@ -54,7 +46,6 @@ class DummySetSessionDescriptionObserver : public webrtc::SetSessionDescriptionO
 };
 
 class SimpleDataChannelObserver : public webrtc::DataChannelObserver{
-
 	public:
 		SimpleDataChannelObserver(webrtc::DataChannelInterface *data_channel){
 			 channel = rtc::scoped_refptr<webrtc::DataChannelInterface>(data_channel);
@@ -62,9 +53,7 @@ class SimpleDataChannelObserver : public webrtc::DataChannelObserver{
 
 		// The data channel state have changed.
 		virtual void OnStateChange(){
-
 			char state[15];
-
 			switch(channel->state()){
 				case webrtc::DataChannelInterface::kClosed:
 					strcpy(state, "CLOSED");
@@ -84,18 +73,16 @@ class SimpleDataChannelObserver : public webrtc::DataChannelObserver{
 			std::cout << "[CH (" << channel->label() << ")] state = " << std::string(state, strlen(state))  << std::endl;
 
 			if(channel->state() == webrtc::DataChannelInterface::kOpen){
-
 				channel->Send(webrtc::DataBuffer("Native Hello World !"));
 			}
 		}
-		//  A data buffer was successfully received.
+
 		virtual void OnMessage(const webrtc::DataBuffer& buffer){
 			std::cout << "[CH (" << channel->label() << ")] message received : " << std::string((const char*)buffer.data.data(), buffer.data.size()) << std::endl;
 		}
 
 	private:
 		rtc::scoped_refptr<webrtc::DataChannelInterface> channel;
-
 };
 
 }

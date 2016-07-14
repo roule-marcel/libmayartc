@@ -1,7 +1,5 @@
-CXX=g++-4.8
-CC=gcc-4.8
 
-WEBRTC_TRUNK=/home/$(USER)/libs/webrtc/src
+WEBRTC_TRUNK=$(PWD)/lib/webrtc/
 
 DEFINES=-DWEBRTC_POSIX -DV8_DEPRECATION_WARNINGS -DEXPAT_RELATIVE_PATH \
   -DFEATURE_ENABLE_VOICEMAIL -DGTEST_RELATIVE_PATH -DJSONCPP_RELATIVE_PATH \
@@ -52,49 +50,29 @@ CXXFLAGS=${INCLUDES} ${CFLAGS} ${DEFINES} -std=c++11 -MMD -MP
 
 DEBUG=-g
 
-.PHONY: all clean
+SRC=$(shell find src -name "*.cpp" | grep -v test)
 
-all: build/Main build/cmain
-
-sigrun:
-	node test/server.js
+all: build/test
 
 
-run:
-	./build/Main
+build/test: bin/test.o build/libwebrtcpp.a
+	${CXX} ${DEBUG} ${LDFLAGS} -Lbuild/ $< -o $@ -lwebrtcpp -ljpeg 
 
-prepare-package:
-	mkdir -p dist/libmayartc/usr
-	mkdir -p dist/libmayartc/usr/lib
-	mkdir -p dist/libmayartc/usr/include
-	mkdir -p dist/libmayartc/usr/include/mayartc
-	cp build/libmayartc.so dist/libmayartc/usr/lib/
-	mkdir -p dist/libmayartc/usr/include
-	mkdir -p dist/libmayartc/usr/include/mayartc/
-	cp src/*.h* dist/libmayartc/usr/include/mayartc/
-
-build/Main: build/obj/Main.o build/libmayartc.so
-	${CXX} ${DEBUG} ${LDFLAGS} -Lbuild/ build/obj/Main.o -o build/Main -lmayartc -ljpeg 
-
-build/cmain: build/libmayartc.so src/main.c
-	${CC} -Lbuild/ -o build/cmain src/main.c -lmayartc -ljpeg
-
-build/libmayartc.a: build/obj/RTCPeer.o build/obj/RTCSignaling.o build/obj/MayaSignaling.o build/obj/RTCConnection.o build/obj/RTCChannel.o build/obj/MemoryRenderer.o build/obj/MemoryCapturer.o build/obj/RTCStream.o
+build/libwebrtcpp.a: $(SRC:src/%.cpp=bin/%.o)
+	mkdir -p build
 	ar rvs $@ $^ ${WEBRTC_LIBS}
 
-build/libmayartc.so: build/obj/RTCPeer.o build/obj/RTCSignaling.o build/obj/MayaSignaling.o build/obj/RTCConnection.o build/obj/RTCChannel.o build/obj/cwrapper.o build/obj/MemoryRenderer.o build/obj/MemoryCapturer.o build/obj/RTCStream.o
-	${CXX} ${DEBUG} ${LDFLAGS} $^ -Wl,--start-group ${WEBRTC_LIBS} -Wl,--end-group ${LIBRARIES} -shared -o $@ -ljpeg
-
-build/obj/%.o: src/%.cpp
+bin/%.o: src/%.cpp
+	mkdir -p `dirname $@`
 	${CXX} ${DEBUG} ${CXXFLAGS} $< -c -o $@
 
-build/deps/%: src/%.cpp
+bin/deps/%: src/%.cpp
+	mkdir -p bin
 	${CXX} ${INCLUDES} ${DEFINES} -H $<
 
--include $(shell find ./build/ -name "*.d")
+-include $(shell find ./bin/ -name "*.d")
 
 
 clean:
-	rm -Rf build/*
-	mkdir build/obj
-	mkdir build/deps
+	rm -rf build
+	rm -rf bin

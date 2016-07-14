@@ -19,7 +19,7 @@
 #define RTCCONNECTION_OFFER_TIMEOUT 20
 
 
-namespace maya{
+namespace webrtcpp {
 
 RTCConnection::RTCConnection(RTCPeer *peer, webrtc::PeerConnectionFactoryInterface * peerConnectionFactory, int peerID){
 	this->peerID = peerID;
@@ -61,18 +61,14 @@ SimpleConstraints * RTCConnection::getMediaConstraints(){
 
 
 
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////PeerConnectionObserver Implementation///////////////////
-///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////
+// PeerConnectionObserver Implementation //
+///////////////////////////////////////////
 
-// Triggered when a remote peer opens a data channel.
 void RTCConnection::OnDataChannel(webrtc::DataChannelInterface* data_channel){
-//	data_channel->Close(); //Remote opening of data channels not allowed, fuckers !
 	std::cout << data_channel->label() << std::endl;
 }
 
-// jfellus 26/02/2016
-// Triggered when a remote peer opens a stream.
 void RTCConnection::OnAddStream(webrtc::MediaStreamInterface* stream) {
 	printf("ADD STREAM : %s !!\n", stream->label().c_str());
 
@@ -81,12 +77,8 @@ void RTCConnection::OnAddStream(webrtc::MediaStreamInterface* stream) {
 
 	channel->setStream(stream);
 }
-//
 
-
-// New Ice candidate have been found.
 void RTCConnection::OnIceCandidate(const webrtc::IceCandidateInterface* candidate){
-
 	std::string sdp_mid = candidate->sdp_mid();
 	int sdp_mlineindex = candidate->sdp_mline_index();
 	std::string sdp;
@@ -104,36 +96,33 @@ void RTCConnection::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceCo
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////CreateSessionDescriptionObserver implementation/////////////
-/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+// CreateSessionDescriptionObserver implementation //
+/////////////////////////////////////////////////////
 
-void RTCConnection::OnSuccess(webrtc::SessionDescriptionInterface* desc){
+void RTCConnection::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
 	peerConnection->SetLocalDescription(DummySetSessionDescriptionObserver::Create(0), desc);
 
 	std::string sdp;
-	if(!desc->ToString(&sdp)){
-		return ; //Cannot serialize SDP
-	}
+	if(!desc->ToString(&sdp)) return;
 
 	peer->getSignalingChannel()->sendLocalSDP(peerID, desc->type(), sdp);
 }
 
-void RTCConnection::OnFailure(const std::string& error){
+void RTCConnection::OnFailure(const std::string& error) {
 	std::cerr << "CREATE ANSWER ERROR: " << error << std::endl;
 }
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
 
-void RTCConnection::close(){
+
+/////////////////////
+
+void RTCConnection::close() {
 	peerConnection->Close();
 	peerConnection = NULL;
 }
 
-int RTCConnection::getPeerID(){
+int RTCConnection::getPeerID() {
 	return peerID;
 }
 
@@ -141,27 +130,20 @@ bool RTCConnection::hasTimeoutExpired() {
 	if(createOfferTimestamp == -1) { return false; }
 	std::time_t currentTime = std::time(NULL);
 
-	if(peerConnection.get() != NULL && currentTime - createOfferTimestamp > RTCCONNECTION_OFFER_TIMEOUT && 
+	return (peerConnection.get() != NULL && currentTime - createOfferTimestamp > RTCCONNECTION_OFFER_TIMEOUT &&
 		peerConnection->ice_connection_state() != webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionConnected &&
-		peerConnection->ice_connection_state() != webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionCompleted) {
-		return true;
-	} else {
-		return false;
-	}
+		peerConnection->ice_connection_state() != webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionCompleted);
 }
 
 
-rtc::scoped_refptr<webrtc::DataChannelInterface> RTCConnection::createDataChannel(char *name, int reliable){
-
+rtc::scoped_refptr<webrtc::DataChannelInterface> RTCConnection::createDataChannel(char *name, int reliable) {
 	struct webrtc::DataChannelInit *init = new webrtc::DataChannelInit();
-
-	if(!reliable){
+	if(!reliable) {
 		init->maxRetransmits = 0;
 		init->ordered = false;
 	}
 
 	rtc::scoped_refptr<webrtc::DataChannelInterface> ch = peerConnection->CreateDataChannel(std::string(name,strlen(name)), init);
-
 	return ch;
 }
 
@@ -182,24 +164,22 @@ void RTCConnection::createOffer(std::string turn_url, std::string turn_username,
 	peerConnection->CreateOffer(this, getMediaConstraints());
 }
 
-void RTCConnection::setRemoteSessionDescription(webrtc::SessionDescriptionInterface* session_description){
-
+void RTCConnection::setRemoteSessionDescription(webrtc::SessionDescriptionInterface* session_description) {
 	peerConnection->SetRemoteDescription(DummySetSessionDescriptionObserver::Create(0), session_description);
 }
 
-void RTCConnection::addStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream){
+void RTCConnection::addStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
 	peerConnection->AddStream(stream);
 }
 
-void RTCConnection::addICECandidate(webrtc::IceCandidateInterface *candidate){
-
-	if (!peerConnection->AddIceCandidate(candidate)) {
-		std::cout << "[SIG] cannot use new candidate" << std::endl;
-	}
+void RTCConnection::addICECandidate(webrtc::IceCandidateInterface *candidate) {
+	if (!peerConnection->AddIceCandidate(candidate)) std::cout << "[SIG] cannot use new candidate" << std::endl;
 }
 
+
 // implements the MessageHandler interface
-void RTCConnection::OnMessage(rtc::Message* msg){
+
+void RTCConnection::OnMessage(rtc::Message* msg) {
 	std::cout << "MSG" << std::endl;
 }
 

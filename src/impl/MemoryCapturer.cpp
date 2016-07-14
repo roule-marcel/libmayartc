@@ -1,27 +1,23 @@
 /*
-* MemoryCapturer.cpp
-*
-*  Created on: 07 mar 2016
-*      Author: jfellus
-*/
+ * MemoryCapturer.cpp
+ *
+ *  Created on: 07 mar 2016
+ *      Author: jfellus
+ */
 
 #include "MemoryCapturer.hpp"
 
 
 
 
-namespace maya {
+namespace webrtcpp {
 
-
-
-
-MemoryCapturer::MemoryCapturer(rtc::Thread* thread, uint w, uint h)
+MemoryCapturer::MemoryCapturer(rtc::Thread* thread, uint32_t w, uint32_t h)
 	: cricket::VideoCapturer(), running_(false),
-	initial_unix_timestamp_(time(NULL) * rtc::kNumNanosecsPerSec),
-	next_timestamp_(rtc::kNumNanosecsPerMillisec),
-	is_screencast_(false),
-	rotation_(webrtc::kVideoRotation_0) {
-
+	  initial_unix_timestamp_(time(NULL) * rtc::kNumNanosecsPerSec),
+	  next_timestamp_(rtc::kNumNanosecsPerMillisec),
+	  is_screencast_(false),
+	  rotation_(webrtc::kVideoRotation_0) {
 	std::vector<cricket::VideoFormat> formats;
 	formats.push_back(cricket::VideoFormat(w, h, cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_ARGB));
 	ResetSupportedFormats(formats);
@@ -32,9 +28,7 @@ MemoryCapturer::~MemoryCapturer() {
 }
 
 bool MemoryCapturer::CaptureFrame(const char* img, int w, int h) {
-	if (!GetCaptureFormat()) {
-		return false;
-	}
+	if (!GetCaptureFormat()) return false;
 	if (!running_) return false;
 
 	size_t size = w*h*4;
@@ -56,24 +50,25 @@ bool MemoryCapturer::CaptureFrame(const char* img, int w, int h) {
 		}
 	}
 
-	rtc::scoped_ptr<char[]> data(buf);
-	frame.data = data.get();
+	frame.data = buf;
 	frame.rotation = rotation_;
 
 	SignalFrameCaptured(this, &frame);
+
+	delete buf; buf = NULL;
 	return true;
 }
 
 
- cricket::CaptureState MemoryCapturer::Start(const cricket::VideoFormat& format) {
+cricket::CaptureState MemoryCapturer::Start(const cricket::VideoFormat& format) {
 	cricket::VideoFormat supported;
 	if (GetBestCaptureFormat(format, &supported)) SetCaptureFormat(&supported);
 	running_ = true;
-	 SetCaptureState(cricket::CS_RUNNING);
+	SetCaptureState(cricket::CS_RUNNING);
 	return cricket::CS_RUNNING;
 }
 
- void MemoryCapturer::Stop() {
+void MemoryCapturer::Stop() {
 	running_ = false;
 	SetCaptureFormat(NULL);
 	SetCaptureState(cricket::CS_STOPPED);

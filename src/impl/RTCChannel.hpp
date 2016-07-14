@@ -8,14 +8,14 @@
 #ifndef RTCCHANNEL_HPP_
 #define RTCCHANNEL_HPP_
 
-#include "webrtc/api/datachannelinterface.h"
-#include "webrtc/api/mediastreaminterface.h"
+#include <webrtc/api/datachannelinterface.h>
+#include <webrtc/api/mediastreaminterface.h>
 
 
 
-#include "RTCChannelInterface.hpp"
+#include "../api/RTCChannelInterface.hpp"
 
-namespace maya{
+namespace webrtcpp {
 
 class MemoryRenderer;
 
@@ -35,14 +35,12 @@ class RTCChannel : public RTCChannelInterface, public webrtc::DataChannelObserve
 		bool negociated;
 		MemoryRenderer* memoryRenderer;
 
-		void doSetDataChannel(webrtc::DataChannelInterface *channel);
-
 	public:
 
 		RTCChannel(char * name, int reliable);
 		virtual ~RTCChannel();
 
-		char * getName();
+		char* getName();
 
 		int isReliable();
 
@@ -51,9 +49,7 @@ class RTCChannel : public RTCChannelInterface, public webrtc::DataChannelObserve
 		void setDataChannel(webrtc::DataChannelInterface *channel);
 		void setStream(webrtc::MediaStreamInterface *stream);
 
-		// The data channel state have changed.
 		virtual void OnStateChange();
-		//  A data buffer was successfully received.
 		virtual void OnMessage(const webrtc::DataBuffer& buffer);
 
 		// A frame was successfully received from a Stream
@@ -66,6 +62,10 @@ class RTCChannel : public RTCChannelInterface, public webrtc::DataChannelObserve
 		virtual void registerStreamCallback(StreamCallback cb, void * userData);
 
 		virtual void close();
+
+
+	private:
+		void doSetDataChannel(webrtc::DataChannelInterface *channel);
 };
 
 }

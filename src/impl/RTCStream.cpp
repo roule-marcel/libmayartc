@@ -6,9 +6,9 @@
  */
 
 #include "RTCStream.hpp"
-#include "webrtc/api/mediastreaminterface.h"
+#include <webrtc/api/mediastreaminterface.h>
 
-namespace maya{
+namespace webrtcpp {
 
 RTCStream::RTCStream(const char* name, uint w, uint h) {
 	this->w = w;
@@ -16,6 +16,9 @@ RTCStream::RTCStream(const char* name, uint w, uint h) {
 	this->name = name;
 	this->capturer = NULL;
 }
+
+RTCStream::~RTCStream() {}
+
 
 void RTCStream::init(rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peerConnectionFactory, rtc::Thread* thread) {
 	if(this->capturer) return;
@@ -27,8 +30,6 @@ void RTCStream::init(rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> 
 	stream->AddTrack(track);
 }
 
-RTCStream::~RTCStream() {
-}
 
 void RTCStream::sendImage(const char* buffer, int w, int h) {
 	if(!capturer) return;
@@ -36,5 +37,6 @@ void RTCStream::sendImage(const char* buffer, int w, int h) {
 	this->w = w; this->h = h;
 	capturer->CaptureFrame(buffer, w,h);
 }
+
 
 }

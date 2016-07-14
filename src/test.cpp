@@ -2,12 +2,12 @@
 
 #include <signal.h>
 
-#include "RTCPeerInterface.hpp"
-#include "MayaSignaling.hpp"
+#include "api/SignalingInterface.hpp"
+#include "api/RTCPeerInterface.hpp"
 
-using namespace maya;
+using namespace webrtcpp;
 
-MayaSignalingInterface *signaling;
+SignalingChannelInterface *signaling;
 RTCPeerInterface * peer;
 
 void signal_handler(int sig){
@@ -31,10 +31,10 @@ int main(void){
 
 	initRTC();
 
-	signaling = MayaSignalingInterface::create();
+	signaling = SignalingChannelInterface::create();
 	signaling->start();
 
-	peer = (RTCPeerInterface*) signaling->getPeer();
+	peer = (RTCPeerInterface*) signaling->peer;
 	peer->registerChannel("ctrl.info", 1);
 	peer->join();
 

@@ -8,21 +8,20 @@
 #ifndef RTCPEERINTERFACE_HPP_
 #define RTCPEERINTERFACE_HPP_
 
-#include "RTCSignaling.hpp"
+#include "SignalingInterface.hpp"
 #include "RTCChannelInterface.hpp"
 #include "RTCStreamInterface.hpp"
 
-namespace maya{
+namespace webrtcpp {
 
-	class RTCPeerInterface : public RTCSignalingChannelPeer{
-
-		public:
+	class RTCPeerInterface : public SignalingChannelPeerInterface {
+		public :
 			virtual ~RTCPeerInterface(){}
 
-			static RTCPeerInterface * create(RTCSignalingChannel *signalingChannel);
+			static RTCPeerInterface * create(SignalingChannelInterface *signalingChannel);
 
 			virtual RTCChannelInterface* registerChannel(const char* name, int reliable) = 0;
-			virtual RTCStreamInterface* registerStream(const char* name, uint w, uint h) = 0;
+			virtual RTCStreamInterface* registerStream(const char* name, uint32_t w, uint32_t h) = 0;
 
 			virtual void join() = 0;
 	};

@@ -8,12 +8,10 @@
 #ifndef RTCSTREAMINTERFACE_HPP_
 #define RTCSTREAMINTERFACE_HPP_
 
-namespace maya{
+namespace webrtcpp {
 
-class RTCStreamInterface{
-
+class RTCStreamInterface {
 	public:
-
 		virtual ~RTCStreamInterface() {}
 		virtual void sendImage(const char* buffer, int w, int h) = 0;
 };
