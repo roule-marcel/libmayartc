@@ -1,0 +1,22 @@
+
+<html>
+<body>
+	<div id="prout"></div>
+</body>
+</html>
+<script>
+
+	var i = 0;
+	function dobidou() {
+		ws.send(i++);
+	}
+
+	var ws = new WebSocket("ws://localhost:10000", "webrtc-pp");
+	ws.onopen = function() {
+		inter = setInterval(dobidou, 500);
+	};
+	ws.onclose = function() {
+		//clearInterval(inter);
+	}
+			
+</script>

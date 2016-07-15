@@ -8,7 +8,7 @@
 #ifndef RTCSTREAMINTERFACE_HPP_
 #define RTCSTREAMINTERFACE_HPP_
 
-namespace webrtcpp {
+namespace oldwebrtcpp {
 
 class RTCStreamInterface {
 	public:

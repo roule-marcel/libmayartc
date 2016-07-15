@@ -8,16 +8,15 @@
 
 #include <webrtc/base/scoped_ref_ptr.h>
 #include <webrtc/api/peerconnectioninterface.h>
-
+#include "../../api/SignalingServer.h"
 #include "RTCConnection.hpp"
 #include "RTCCommon.hpp"
 #include "RTCChannel.hpp"
 #include "RTCStream.hpp"
 
-#include "../api/SignalingInterface.hpp"
 #include "../api/RTCPeerInterface.hpp"
 
-namespace webrtcpp {
+namespace oldwebrtcpp {
 
 class RTCConnection;
 

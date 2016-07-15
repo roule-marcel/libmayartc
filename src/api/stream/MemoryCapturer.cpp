@@ -12,12 +12,12 @@
 
 namespace webrtcpp {
 
-MemoryCapturer::MemoryCapturer(rtc::Thread* thread, uint32_t w, uint32_t h)
+MemoryCapturer::MemoryCapturer(uint32_t w, uint32_t h)
 	: cricket::VideoCapturer(), running_(false),
 	  initial_unix_timestamp_(time(NULL) * rtc::kNumNanosecsPerSec),
 	  next_timestamp_(rtc::kNumNanosecsPerMillisec),
 	  is_screencast_(false),
-	  rotation_(webrtc::kVideoRotation_0) {
+	  rotation_(webrtc::kVideoRotation_0), w(w), h(h) {
 	std::vector<cricket::VideoFormat> formats;
 	formats.push_back(cricket::VideoFormat(w, h, cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_ARGB));
 	ResetSupportedFormats(formats);
@@ -27,7 +27,7 @@ MemoryCapturer::~MemoryCapturer() {
 	SignalDestroyed(this);
 }
 
-bool MemoryCapturer::CaptureFrame(const char* img, int w, int h) {
+bool MemoryCapturer::captureFrame(const unsigned char* rgb) {
 	if (!GetCaptureFormat()) return false;
 	if (!running_) return false;
 
@@ -41,21 +41,21 @@ bool MemoryCapturer::CaptureFrame(const char* img, int w, int h) {
 	frame.time_stamp = initial_unix_timestamp_ + next_timestamp_;
 	next_timestamp_ += 33333333;
 
-	char* buf = new char[size];
+	char* argb = new char[size];
 	for(uint y = 0; y<h; y++) {
 		for(uint x=0; x<w; x++) {
-			buf[(y*w+x)*4+2] = img[(y*w+x)*3];
-			buf[(y*w+x)*4+1] = img[(y*w+x)*3+1];
-			buf[(y*w+x)*4] = img[(y*w+x)*3+2];
+			argb[(y*w+x)*4+2] = rgb[(y*w+x)*3];
+			argb[(y*w+x)*4+1] = rgb[(y*w+x)*3+1];
+			argb[(y*w+x)*4] = rgb[(y*w+x)*3+2];
 		}
 	}
 
-	frame.data = buf;
+	frame.data = argb;
 	frame.rotation = rotation_;
 
 	SignalFrameCaptured(this, &frame);
 
-	delete buf; buf = NULL;
+	delete argb; argb = NULL;
 	return true;
 }
 

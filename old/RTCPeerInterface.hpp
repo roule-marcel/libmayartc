@@ -8,11 +8,11 @@
 #ifndef RTCPEERINTERFACE_HPP_
 #define RTCPEERINTERFACE_HPP_
 
-#include "SignalingInterface.hpp"
 #include "RTCChannelInterface.hpp"
 #include "RTCStreamInterface.hpp"
+#include "SignalingServer.h"
 
-namespace webrtcpp {
+namespace oldwebrtcpp {
 
 	class RTCPeerInterface : public SignalingChannelPeerInterface {
 		public :

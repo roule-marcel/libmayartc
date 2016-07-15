@@ -18,27 +18,35 @@ namespace webrtcpp {
 
 class MemoryCapturer : public cricket::VideoCapturer {
 public:
-	MemoryCapturer(rtc::Thread* thread, uint32_t w, uint32_t h);
+	sigslot::signal1<MemoryCapturer*> SignalDestroyed;
+
+
+public:
+	MemoryCapturer(uint32_t w, uint32_t h);
 	~MemoryCapturer();
 
-	void ResetSupportedFormats(const std::vector<cricket::VideoFormat>& formats) { SetSupportedFormats(formats); }
-	bool CaptureFrame(const char* img, int w, int h);
 
-	void SignalCapturedFrame(cricket::CapturedFrame* frame) { SignalFrameCaptured(this, frame); }
+	bool captureFrame(const unsigned char* rgb);
 
-	sigslot::signal1<MemoryCapturer*> SignalDestroyed;
 
 	virtual cricket::CaptureState Start(const cricket::VideoFormat& format);
 	virtual void Stop();
+
+
 	virtual bool IsRunning() { return running_; }
+
+
 	void SetScreencast(bool is_screencast) { is_screencast_ = is_screencast; }
 	virtual bool IsScreencast() const { return is_screencast_; }
 	bool GetPreferredFourccs(std::vector<uint32_t>* fourccs);
-
+	void SignalCapturedFrame(cricket::CapturedFrame* frame) { SignalFrameCaptured(this, frame); }
+	void ResetSupportedFormats(const std::vector<cricket::VideoFormat>& formats) { SetSupportedFormats(formats); }
 	void SetRotation(webrtc::VideoRotation rotation) { rotation_ = rotation; }
 	webrtc::VideoRotation GetRotation() { return rotation_; }
 
 private:
+	uint32_t w,h;
+
 	bool running_;
 	int64_t initial_unix_timestamp_;
 	int64_t next_timestamp_;

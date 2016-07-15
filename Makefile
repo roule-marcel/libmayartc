@@ -1,5 +1,5 @@
 
-WEBRTC_TRUNK=$(PWD)/lib/webrtc/
+WEBRTC_TRUNK=$(PWD)/lib/src/
 
 DEFINES=-DWEBRTC_POSIX -DV8_DEPRECATION_WARNINGS -DEXPAT_RELATIVE_PATH \
   -DFEATURE_ENABLE_VOICEMAIL -DGTEST_RELATIVE_PATH -DJSONCPP_RELATIVE_PATH \
@@ -20,14 +20,16 @@ DEFINES=-DWEBRTC_POSIX -DV8_DEPRECATION_WARNINGS -DEXPAT_RELATIVE_PATH \
   -DENABLE_MDNS=1 -DLIBPEERCONNECTION_LIB=1 -DLINUX -DHAVE_SCTP \
   -DHASH_NAMESPACE=__gnu_cxx -DPOSIX -DDISABLE_DYNAMIC_CAST -D_REENTRANT \
   -DSSL_USE_NSS -DHAVE_NSS_SSL_H -DSSL_USE_NSS_RNG -DNDEBUG -DNVALGRIND \
-  -DDYNAMIC_ANNOTATIONS_ENABLED=0
-
+  -DDYNAMIC_ANNOTATIONS_ENABLED=0 
+  
+  
 WEBRTC_BIN=${WEBRTC_TRUNK}/out/Release
 
 INCLUDES=-I${WEBRTC_TRUNK} -I${WEBRTC_TRUNK}/third_party \
     -I${WEBRTC_TRUNK}/third_party/webrtc -I${WEBRTC_TRUNK}/webrtc \
     -I${WEBRTC_TRUNK}/net/third_party/nss/ssl \
     -I${WEBRTC_TRUNK}/third_party/jsoncpp/overrides/include \
+    -I${WEBRTC_TRUNK}/third_party/jsoncpp/source/include \
     -I${WEBRTC_TRUNK}/third_party/jsoncpp/source/include
 
 CFLAGS=-fstack-protector -O3 --param=ssp-buffer-size=4 -pthread \
@@ -52,14 +54,19 @@ DEBUG=-g
 
 SRC=$(shell find src -name "*.cpp" | grep -v test)
 
-all: build/test
+all: build/test build/test_websocket
 
+
+build/test_websocket: bin/test_websocket.o bin/util/websocket.o
+	mkdir -p `dirname $@` 
+	${CXX} ${DEBUG} ${LDFLAGS} -Lbuild/ $^ -o $@ -lwebsockets
 
 build/test: bin/test.o build/libwebrtcpp.a
+	mkdir -p `dirname $@` 
 	${CXX} ${DEBUG} ${LDFLAGS} -Lbuild/ $< -o $@ -lwebrtcpp -ljpeg 
 
 build/libwebrtcpp.a: $(SRC:src/%.cpp=bin/%.o)
-	mkdir -p build
+	mkdir -p `dirname $@` 
 	ar rvs $@ $^ ${WEBRTC_LIBS}
 
 bin/%.o: src/%.cpp

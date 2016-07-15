@@ -8,7 +8,7 @@
 #ifndef RTCCHANNELINTERFACE_HPP_
 #define RTCCHANNELINTERFACE_HPP_
 
-namespace webrtcpp {
+namespace oldwebrtcpp {
 
 typedef void (*ReceiveCallback)(float* buffer, int bufferSize, void * userData);
 typedef void (*StreamCallback)(unsigned char* buffer, int w, int h, void * userData);
