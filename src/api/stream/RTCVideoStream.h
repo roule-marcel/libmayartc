@@ -43,10 +43,10 @@ public:
 	void setSize(uint32_t w, uint32_t h);
 	void setStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream);
 
-	bool read(uint8_t* argb);
+	bool read(uint8_t* rgb);
 
 protected:
-	virtual void onFrame(uint8_t* argb, uint32_t w, uint32_t h);
+	virtual void onFrame(uint8_t* rgb, uint32_t w, uint32_t h);
 
 };
 

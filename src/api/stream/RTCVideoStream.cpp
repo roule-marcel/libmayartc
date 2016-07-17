@@ -13,6 +13,7 @@
 #include <webrtc/media/base/videocapturer.h>
 #include <webrtc/api/mediastreaminterface.h>
 #include <webrtc/api/peerconnectioninterface.h>
+#include "../../util/jpg.h"
 
 namespace webrtcpp {
 
@@ -49,6 +50,7 @@ RTCVideoStreamIn::RTCVideoStreamIn() {
 
 void RTCVideoStreamIn::setStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
 	// TODO : Handle [0] out of bound
+	printf("STREAM !!\n");
 	stream->GetVideoTracks()[0]->AddOrUpdateSink(renderer, rtc::VideoSinkWants());
 }
 
@@ -64,9 +66,14 @@ bool RTCVideoStreamIn::read(unsigned char* argb) {
 	return false;
 }
 
-void RTCVideoStreamIn::onFrame(unsigned char* argb, uint32_t w, uint32_t h) {
+void RTCVideoStreamIn::onFrame(unsigned char* rgb, uint32_t w, uint32_t h) {
 	// TODO read stuff
 	printf("FRAME : %ux%u\n", w,h);
+
+//	static char s[256];
+//	static int i=0;
+//	sprintf(s, "img_%08d.jpg", i++);
+//	save_jpg(rgb, w, h, s);
 }
 
 

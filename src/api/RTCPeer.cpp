@@ -36,9 +36,9 @@ public:
 	virtual void OnMessage(const webrtc::DataBuffer& buffer) {
 		const char* r = (const char*) buffer.data.data();
 		printf("Datachannel message : %s\n", r);
-		char buf[256];
-		sprintf(buf, "REPONSE %08d", i++);
-		dataChannel->Send(webrtc::DataBuffer(rtc::CopyOnWriteBuffer(buf, strlen(buf)),true));
+//		char buf[256];
+//		sprintf(buf, "REPONSE %08d", i++);
+//		dataChannel->Send(webrtc::DataBuffer(rtc::CopyOnWriteBuffer(buf, strlen(buf)),true));
 	}
 };
 
@@ -61,16 +61,32 @@ RTCPeer::RTCPeer(SignalingWebSocketPeer* signalingPeer) : signalingPeer(signalin
 
 }
 
+static RTCVideoStreamOut* s;
 void RTCPeer::open(webrtc::PeerConnectionFactoryInterface* peerConnectionFactory) {
 	webrtc::PeerConnectionInterface::RTCConfiguration config;
 	peer = peerConnectionFactory->CreatePeerConnection(config, NULL, NULL, this);
 
 	// Create datachannels
-	rtc::scoped_refptr<webrtc::DataChannelInterface> ch = createDataChannel("prout", 1);
-	ch->RegisterObserver(new DataChannelTestObserver(ch));
+//	rtc::scoped_refptr<webrtc::DataChannelInterface> ch = createDataChannel("prout", 1);
+//	ch->RegisterObserver(new DataChannelTestObserver(ch));
 
 	// Create streams
-	//createStream(...);
+	s = createStream("test", 640,480);
+	std::thread* th = new std::thread([&](){
+		uint8_t* rgb = new uint8_t[640*480*3];
+		for(int z=0;; z++) {
+			usleep(40000);
+			for(int i=0; i<480; i++) {
+				for(int j=0; j<640; j++) {
+					uint8_t u = (z%255);
+					rgb[(i*640+j)*3] = u;
+					rgb[(i*640+j)*3+1] = 0;
+					rgb[(i*640+j)*3+2] = 0;
+				}
+			}
+			s->write(rgb);
+		}
+	});
 
 	peer->CreateOffer(this, NULL);
 }
@@ -150,12 +166,15 @@ rtc::scoped_refptr<webrtc::DataChannelInterface> RTCPeer::createDataChannel(cons
 
 RTCVideoStreamOut* RTCPeer::createStream(const char* name, uint32_t w, uint32_t h) {
 	RTCVideoStreamOut* out = new RTCVideoStreamOut(name, w, h);
+	peer->AddStream(out->stream);
+	return out;
 }
 
 
 // Incoming
 
 void RTCPeer::OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
+	printf("STREAMOUNET\n");
 	RTCVideoStreamIn* in = new RTCVideoStreamIn(); // TODO Keep a register of declared streams and just lookup them
 	in->setStream(stream);
 }

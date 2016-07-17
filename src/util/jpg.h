@@ -12,71 +12,68 @@
 
 
 inline void save_jpg(const unsigned char* data, size_t w, size_t h, const char* outfile) {
+	struct jpeg_compress_struct cinfo;
+	struct jpeg_error_mgr jerr;
+	JSAMPROW row_pointer[1];	/* pointer to JSAMPLE row[s] */
 
-	printf("size = %ux%u\n",w, h);
+	cinfo.err = jpeg_std_error(&jerr);
+	jpeg_create_compress(&cinfo);
 
-		struct jpeg_compress_struct cinfo;
-		struct jpeg_error_mgr jerr;
-		JSAMPROW row_pointer[1];	/* pointer to JSAMPLE row[s] */
+	FILE* f = fopen(outfile, "w");
+	if(!f) throw "Can't open file";
 
-		cinfo.err = jpeg_std_error(&jerr);
-		jpeg_create_compress(&cinfo);
+	jpeg_stdio_dest(&cinfo, f);
 
-		FILE* f = fopen(outfile, "w");
-		if(!f) throw "Can't open file";
+	cinfo.image_width = w; 	/* image width and height, in pixels */
+	cinfo.image_height = h;
+	cinfo.input_components = 3;		/* # of color components per pixel */
+	cinfo.in_color_space = JCS_RGB; 	/* colorspace of input image */
+	jpeg_set_defaults(&cinfo);
+	jpeg_set_quality(&cinfo, 80, TRUE /* limit to baseline-JPEG values */);
 
-		jpeg_stdio_dest(&cinfo, f);
+	jpeg_start_compress(&cinfo, TRUE);
 
-		cinfo.image_width = w; 	/* image width and height, in pixels */
-		cinfo.image_height = h;
-		cinfo.input_components = 3;		/* # of color components per pixel */
-		cinfo.in_color_space = JCS_RGB; 	/* colorspace of input image */
-		jpeg_set_defaults(&cinfo);
-		jpeg_set_quality(&cinfo, 80, TRUE /* limit to baseline-JPEG values */);
+	while (cinfo.next_scanline < cinfo.image_height) {
+		row_pointer[0] = (unsigned char*)&data[cinfo.next_scanline*w*3];
+		(void) jpeg_write_scanlines(&cinfo, row_pointer, 1);
+	}
 
-		jpeg_start_compress(&cinfo, TRUE);
-
-		while (cinfo.next_scanline < cinfo.image_height) {
-			row_pointer[0] = (unsigned char*)&data[cinfo.next_scanline*w*3];
-			(void) jpeg_write_scanlines(&cinfo, row_pointer, 1);
-		}
-
-		jpeg_finish_compress(&cinfo);
-		jpeg_destroy_compress(&cinfo);
+	jpeg_finish_compress(&cinfo);
+	jpeg_destroy_compress(&cinfo);
 }
 
 inline void save_jpg(const float* data, size_t w, size_t h, const char* outfile) {
-		struct jpeg_compress_struct cinfo;
-		struct jpeg_error_mgr jerr;
-		JSAMPROW row_pointer[1];	/* pointer to JSAMPLE row[s] */
+	struct jpeg_compress_struct cinfo;
+	struct jpeg_error_mgr jerr;
+	JSAMPROW row_pointer[1];	/* pointer to JSAMPLE row[s] */
 
-		cinfo.err = jpeg_std_error(&jerr);
-		jpeg_create_compress(&cinfo);
+	cinfo.err = jpeg_std_error(&jerr);
+	jpeg_create_compress(&cinfo);
 
-		FILE* f = fopen(outfile, "w");
-		if(!f) throw "Can't open file";
+	FILE* f = fopen(outfile, "w");
+	if(!f) throw "Can't open file";
 
-		jpeg_stdio_dest(&cinfo, f);
+	jpeg_stdio_dest(&cinfo, f);
 
-		cinfo.image_width = w; 	/* image width and height, in pixels */
-		cinfo.image_height = h;
-		cinfo.input_components = 3;		/* # of color components per pixel */
-		cinfo.in_color_space = JCS_RGB; 	/* colorspace of input image */
-		jpeg_set_defaults(&cinfo);
-		jpeg_set_quality(&cinfo, 80, TRUE /* limit to baseline-JPEG values */);
+	cinfo.image_width = w; 	/* image width and height, in pixels */
+	cinfo.image_height = h;
+	cinfo.input_components = 3;		/* # of color components per pixel */
+	cinfo.in_color_space = JCS_RGB; 	/* colorspace of input image */
+	jpeg_set_defaults(&cinfo);
+	jpeg_set_quality(&cinfo, 80, TRUE /* limit to baseline-JPEG values */);
 
-		jpeg_start_compress(&cinfo, TRUE);
+	jpeg_start_compress(&cinfo, TRUE);
 
-		unsigned char* line = new unsigned char[w*3];
-		row_pointer[0] = line;
-		while (cinfo.next_scanline < cinfo.image_height) {
-			for(uint i=0; i<w; i++) line[i*3] = line[i*3+1] = line[i*3+2] = data[cinfo.next_scanline*w + i];
-			(void) jpeg_write_scanlines(&cinfo, row_pointer, 1);
-		}
-		delete line; line = 0;
+	unsigned char* line = new unsigned char[w*3];
+	row_pointer[0] = line;
+	while (cinfo.next_scanline < cinfo.image_height) {
+		for(uint i=0; i<w; i++) line[i*3] = line[i*3+1] = line[i*3+2] = data[cinfo.next_scanline*w + i];
+		(void) jpeg_write_scanlines(&cinfo, row_pointer, 1);
+	}
+	delete line; line = 0;
 
-		jpeg_finish_compress(&cinfo);
-		jpeg_destroy_compress(&cinfo);
+	jpeg_finish_compress(&cinfo);
+	jpeg_destroy_compress(&cinfo);
 }
 
 

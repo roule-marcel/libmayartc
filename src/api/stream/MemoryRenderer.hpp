@@ -18,7 +18,7 @@ namespace webrtcpp {
 class FrameObserver {
 public:
 	virtual ~FrameObserver() {}
-	virtual void onFrame(unsigned char* argb, uint32_t w, uint32_t h) = 0;
+	virtual void onFrame(unsigned char* rgb, uint32_t w, uint32_t h) = 0;
 };
 
 
@@ -27,6 +27,7 @@ class MemoryRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
 public:
 	int w,h;
 	unsigned char* argb;
+	unsigned char* rgb;
 	FrameObserver* frameObserver;
 
 public:
