@@ -15,7 +15,7 @@ static IWebSocketServer* curWebSocketServer = NULL;
 static int callback_http(struct libwebsocket_context* _this, struct libwebsocket *wsi, enum libwebsocket_callback_reasons reason, void *user, void *in, size_t len) {return 0;}
 static int callback_websocket(struct libwebsocket_context *context, struct libwebsocket *ws, enum libwebsocket_callback_reasons reason, void *user, void *msg, size_t len);
 
-static struct libwebsocket_context *context;
+
 static struct libwebsocket_protocols protocols[] = {
 		{"http-only",callback_http,0},
 		{"webrtc-pp", callback_websocket, sizeof(IWebSocketPeer*), 0},

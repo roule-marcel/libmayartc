@@ -28,7 +28,9 @@ class IWebSocketServer;
 
 
 class IWebSocketServer {
+protected:
 	int bQuit = 0;
+	struct libwebsocket_context *context;
 
 public:
 	IWebSocketServer(int port);
@@ -38,7 +40,7 @@ public:
 
 	void close() { bQuit = 1; }
 
-	void run();
+	virtual void run();
 };
 
 
@@ -50,6 +52,7 @@ public:
 class IWebSocketPeer {
 	struct libwebsocket *ws;
 public:
+	IWebSocketPeer(struct libwebsocket *ws) : ws(ws) {}
 	virtual ~IWebSocketPeer() {}
 
 	virtual void onMessage(char* msg) = 0;

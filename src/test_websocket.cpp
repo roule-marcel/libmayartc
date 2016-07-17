@@ -5,7 +5,7 @@
 
 class WebSocketPeer : public IWebSocketPeer {
 public:
-	WebSocketPeer(struct libwebsocket *ws) {
+	WebSocketPeer(struct libwebsocket *ws) : IWebSocketPeer(ws) {
 		printf("PEER CONNECTED %lu\n", (long)this);
 	}
 

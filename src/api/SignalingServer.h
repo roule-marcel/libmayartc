@@ -23,8 +23,6 @@ public:
 	virtual ~SignalingWebSocketPeer();
 	virtual void onMessage(char* msg);
 
-	void onConnection(std::string turn_url, std::string turn_username, std::string turn_password);
-
 	void onRemoteICECandidate(std::string sdp_mid, int sdp_mlineindex, std::string sdp);
 	void onRemoteSDP(std::string type, std::string sdp);
 
@@ -43,6 +41,7 @@ public:
 
 	void start();
 	virtual IWebSocketPeer* createPeer(struct libwebsocket *ws) { return new SignalingWebSocketPeer(this, ws); }
+	virtual void run();
 
 	RTCDataChannel* addDataChannel(const char* name);
 	RTCVideoStreamIn* addVideoInStream(const char* name, uint16_t w, uint16_t h);

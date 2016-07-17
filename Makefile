@@ -23,7 +23,7 @@ DEFINES=-DWEBRTC_POSIX -DV8_DEPRECATION_WARNINGS -DEXPAT_RELATIVE_PATH \
   -DDYNAMIC_ANNOTATIONS_ENABLED=0 
   
   
-WEBRTC_BIN=${WEBRTC_TRUNK}/out/Release
+WEBRTC_BIN=${WEBRTC_TRUNK}/out/Release/
 
 INCLUDES=-I${WEBRTC_TRUNK} -I${WEBRTC_TRUNK}/third_party \
     -I${WEBRTC_TRUNK}/third_party/webrtc -I${WEBRTC_TRUNK}/webrtc \
@@ -38,7 +38,7 @@ CFLAGS=-fstack-protector -O3 --param=ssp-buffer-size=4 -pthread \
     -Wno-unused-result -fno-ident -fdata-sections -ffunction-sections \
     -funwind-tables -fno-rtti -fno-threadsafe-statics -Wno-deprecated
 
-WEBRTC_LIBS=$(shell find ${WEBRTC_BIN}/ -name "*.a" | grep -v test | grep -v do_not_use)
+WEBRTC_LIBS=$(shell find ${WEBRTC_BIN}/ -name "*.a")
 
 LIBRARIES=-lgthread-2.0 -lrt -lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lgio-2.0 \
     -lpangoft2-1.0 -lpangocairo-1.0 -lgdk_pixbuf-2.0 -lcairo -lpango-1.0 \
@@ -46,7 +46,7 @@ LIBRARIES=-lgthread-2.0 -lrt -lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lgio-2.0 \
     -lXext -lXrender -lnss3 -lnssutil3 -lsmime3 -lplds4 -lplc4 -lnspr4 -ldl \
     -lexpat -lm
 
-LDFLAGS=-Wl,-z,now -Wl,-z,relro -pthread -Wl,-z,noexecstack -fPIC
+LDFLAGS=-Wl,-z,now -Wl,-z,relro -pthread -Wl,-z,noexecstack -fPIC  -Wl,-rpath=. -Wl,-rpath=./build
 
 CXXFLAGS=${INCLUDES} ${CFLAGS} ${DEFINES} -std=c++11 -MMD -MP
 
@@ -61,13 +61,18 @@ build/test_websocket: bin/test_websocket.o bin/util/websocket.o
 	mkdir -p `dirname $@` 
 	${CXX} ${DEBUG} ${LDFLAGS} -Lbuild/ $^ -o $@ -lwebsockets
 
-build/test: bin/test.o build/libwebrtcpp.a
+build/test: bin/test.o build/libwebrtcpp.so
 	mkdir -p `dirname $@` 
-	${CXX} ${DEBUG} ${LDFLAGS} -Lbuild/ $< -o $@ -lwebrtcpp -ljpeg 
+	${CXX} ${DEBUG} ${LDFLAGS} -Lbuild/ $< -o $@ -lwebrtcpp -ljpeg -lwebsockets
 
 build/libwebrtcpp.a: $(SRC:src/%.cpp=bin/%.o)
 	mkdir -p `dirname $@` 
-	ar rvs $@ $^ ${WEBRTC_LIBS}
+	ar rvs $@ ${WEBRTC_LIBS} $^ 
+	
+build/libwebrtcpp.so: $(SRC:src/%.cpp=bin/%.o)
+	mkdir -p `dirname $@`
+	${CXX} ${DEBUG} ${LDFLAGS} $^ -Wl,--start-group ${WEBRTC_LIBS} -Wl,--end-group ${LIBRARIES} -shared -o $@ -ljpeg
+	
 
 bin/%.o: src/%.cpp
 	mkdir -p `dirname $@`

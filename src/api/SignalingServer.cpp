@@ -10,7 +10,8 @@
 #include <unordered_map>
 
 #include <webrtc/base/json.h>
-
+#include <webrtc/base/ssladapter.h>
+#include <webrtc/api/peerconnectioninterface.h>
 #include <libwebsockets.h>
 
 
@@ -21,13 +22,13 @@
 
 namespace webrtcpp {
 
-webrtc::PeerConnectionFactoryInterface* rtcPeerConnectionFactory = NULL;
-
+rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> rtcPeerConnectionFactory;
+rtc::Thread* sig_thread = NULL;
 
 void initRTC() {
-//	rtc::InitializeSSL();
+	rtc::InitializeSSL();
 
-	rtc::Thread* sig_thread = rtc::ThreadManager::Instance()->WrapCurrentThread();
+	sig_thread = rtc::ThreadManager::Instance()->WrapCurrentThread();
 	rtc::Thread* worker_thread = new rtc::Thread;
 	worker_thread->Start();
 	rtcPeerConnectionFactory = webrtc::CreatePeerConnectionFactory(worker_thread, sig_thread, NULL, NULL, NULL);
@@ -43,16 +44,19 @@ SignalingWebSocketServer::SignalingWebSocketServer(int port) : IWebSocketServer(
 
 RTCDataChannel* SignalingWebSocketServer::addDataChannel(const char* name) {
 	// TODO multiplexer on RTCDataChannel ???
+	printf("Declare channel %s\n", name);
 	return NULL;
 }
 
 RTCVideoStreamOut* SignalingWebSocketServer::addVideoOutStream(const char* name, uint16_t w, uint16_t h) {
 	// TODO multiplexer on RTCVideoOutStream ???
+	printf("Declare video out %s\n", name);
 	return NULL;
 }
 
 RTCVideoStreamIn* SignalingWebSocketServer::addVideoInStream(const char* name, uint16_t w, uint16_t h) {
 	// TODO multiplexer on RTCVideoInStream ???
+	printf("Declare video in %s\n", name);
 	return NULL;
 }
 
@@ -68,19 +72,32 @@ void SignalingWebSocketServer::start() {
 	});
 }
 
+void SignalingWebSocketServer::run() {
+	while ( !bQuit ) {
+		libwebsocket_service(context, 50);
+		sig_thread->ProcessMessages(10);
+	}
+	usleep(10);
+	libwebsocket_context_destroy(context);
+}
 
 ////////////////////////////
 // SignalingWebSocketPeer //
 ////////////////////////////
 
-SignalingWebSocketPeer::SignalingWebSocketPeer(SignalingWebSocketServer* server, struct libwebsocket *ws) {
+SignalingWebSocketPeer::SignalingWebSocketPeer(SignalingWebSocketServer* server, struct libwebsocket *ws) : IWebSocketPeer(ws) {
 	this->server = server;
-	rtcPeer = NULL;
 	printf("PEER CONNECTED %lu\n", (long)this);
+
+	webrtc::PeerConnectionInterface::RTCConfiguration config;
+	rtcPeer = new rtc::RefCountedObject<RTCPeer>(this);
+	rtcPeer->AddRef();
+	rtcPeer->open(rtcPeerConnectionFactory);
 }
 
 SignalingWebSocketPeer::~SignalingWebSocketPeer() {
 	printf("PEER DISCONNECTED %lu\n", (long)this);
+	if(rtcPeer) rtcPeer->close();
 }
 
 
@@ -93,29 +110,11 @@ void parse_remote_ice_candidate(SignalingWebSocketPeer* peer, Json::Value messag
 	int sdp_mlineindex;
 	std::string sdp;
 
-	Json::Value candidate;
-
-	rtc::GetValueFromJsonObject(message, "candidate", &candidate);
-
-	rtc::GetStringFromJsonObject(candidate, "sdpMid", &sdp_mid);
-	rtc::GetIntFromJsonObject(candidate, "sdpMLineIndex", &sdp_mlineindex);
-	rtc::GetStringFromJsonObject(candidate, "candidate", &sdp);
+	rtc::GetStringFromJsonObject(message, "sdpMid", &sdp_mid);
+	rtc::GetIntFromJsonObject(message, "sdpMLineIndex", &sdp_mlineindex);
+	rtc::GetStringFromJsonObject(message, "candidate", &sdp);
 
 	peer->onRemoteICECandidate(sdp_mid, sdp_mlineindex, sdp);
-}
-
-void parse_connect(SignalingWebSocketPeer* peer, Json::Value message){
-	Json::Value turn;
-	std::string turn_url;
-	std::string turn_username;
-	std::string turn_password;
-
-	rtc::GetValueFromJsonObject(message, "turn", &turn);
-	rtc::GetStringFromJsonObject(turn, "url", &turn_url);
-	rtc::GetStringFromJsonObject(turn, "username", &turn_username);
-	rtc::GetStringFromJsonObject(turn, "password", &turn_password);
-
-	peer->onConnection(turn_url, turn_username, turn_password);
 }
 
 static void parse_remote_sdp(SignalingWebSocketPeer* peer, Json::Value message) {
@@ -139,14 +138,8 @@ static void parse_signaling_message(SignalingWebSocketPeer* peer, const char * m
 		return;
 	}
 
-	std::string cmd;
-	rtc::GetStringFromJsonObject(jmessage,"cmd", &cmd);
-
-	if(cmd.empty()) return ; // if no command specified, ignore message
-
-	if(cmd.compare("Connect") == 0) parse_connect(peer, jmessage);
-	else if(cmd.compare("ICECandidate") == 0) parse_remote_ice_candidate(peer, jmessage);
-	else if(cmd.compare("Answer") == 0) parse_remote_sdp(peer, jmessage);
+	if(jmessage.isMember("sdp")) parse_remote_sdp(peer, jmessage);
+	else  parse_remote_ice_candidate(peer, jmessage);
 }
 
 
@@ -162,12 +155,6 @@ void SignalingWebSocketPeer::onMessage(char* msg) {
 
 // WebRTC handshaking
 
-void SignalingWebSocketPeer::onConnection(std::string turn_url, std::string turn_username, std::string turn_password) {
-	webrtc::PeerConnectionInterface::RTCConfiguration config;
-	rtcPeer = new rtc::RefCountedObject<RTCPeer>(this);
-	rtcPeer->open(rtcPeerConnectionFactory, turn_url, turn_username, turn_password);
-}
-
 void SignalingWebSocketPeer::onRemoteICECandidate(std::string sdp_mid, int sdp_mlineindex, std::string sdp) {
 	if(sdp_mid == "" && sdp_mlineindex == 0 && sdp == "") return;
 	webrtc::IceCandidateInterface *candidate = webrtc::CreateIceCandidate(sdp_mid, sdp_mlineindex, sdp, NULL);
@@ -175,7 +162,7 @@ void SignalingWebSocketPeer::onRemoteICECandidate(std::string sdp_mid, int sdp_m
 		std::cout << "[SIG] cannot parse candidate information" << std::endl;
 		return;
 	}
-	rtcPeer->peer->AddIceCandidate(candidate);
+	rtcPeer->onRemoteIceCandidate(candidate);
 }
 
 void SignalingWebSocketPeer::onRemoteSDP(std::string type, std::string sdp) {
@@ -191,7 +178,6 @@ void SignalingWebSocketPeer::sendLocalSDP(std::string type, std::string sdp) {
 	Json::StyledWriter writer;
 	Json::Value message;
 
-	message["cmd"] = "RemoteOffer";
 	message["type"] = type;
 	message["sdp"] = sdp;
 
@@ -202,15 +188,10 @@ void SignalingWebSocketPeer::sendLocalSDP(std::string type, std::string sdp) {
 void SignalingWebSocketPeer::sendLocalICECandidate(std::string sdp_mid, int sdp_mlineindex, std::string sdp) {
 	Json::StyledWriter writer;
 	Json::Value message;
-	Json::Value candidate;
 
-	message["cmd"] = "RemoteICECandidate";
-
-	candidate["sdpMid"] = sdp_mid;
-	candidate["sdpMLineIndex"] = sdp_mlineindex;
-	candidate["candidate"] = sdp;
-
-	message["candidate"] = candidate;
+	message["sdpMid"] = sdp_mid;
+	message["sdpMLineIndex"] = sdp_mlineindex;
+	message["candidate"] = sdp;
 
 	std::string msg = writer.write(message);
 	send(msg.c_str());

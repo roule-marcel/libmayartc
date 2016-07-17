@@ -10,7 +10,7 @@
 
 
 #include <webrtc/api/mediaconstraintsinterface.h>
-
+#include <string>
 
 
 
@@ -24,8 +24,12 @@ class SimpleConstraints : public webrtc::MediaConstraintsInterface {
 		virtual ~SimpleConstraints() {}
 		virtual const Constraints& GetMandatory() const { return mandatory_; }
 		virtual const Constraints& GetOptional() const { return optional_; }
-		template <class T> void AddMandatory(const char* key, const T& value) { mandatory_.push_back(Constraint(key, rtc::ToString<T>(value))); }
-		template <class T> void AddOptional(const char* key, const T& value) { optional_.push_back(Constraint(key, rtc::ToString<T>(value))); }
+		template <class T> void AddMandatory(const char* key, const T& value) {
+			mandatory_.push_back(Constraint(*(new std::string(key, strlen(key))), rtc::ToString<T>(value)));
+		}
+		template <class T> void AddOptional(const char* key, const T& value) {
+			optional_.push_back(Constraint(*(new std::string(key, strlen(key))), rtc::ToString<T>(value)));
+		}
 	private:
 		Constraints mandatory_;
 		Constraints optional_;

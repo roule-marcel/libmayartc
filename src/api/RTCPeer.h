@@ -17,7 +17,7 @@ namespace webrtcpp {
 class SignalingWebSocketPeer;
 
 
-class RTCPeer : public webrtc::PeerConnectionObserver, public webrtc::CreateSessionDescriptionObserver {
+class RTCPeer : webrtc::PeerConnectionObserver, public webrtc::CreateSessionDescriptionObserver {
 public:
 	rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer;
 	SignalingWebSocketPeer* signalingPeer;
@@ -26,7 +26,7 @@ public:
 	RTCPeer(SignalingWebSocketPeer* signalingPeer);
 	virtual ~RTCPeer() {}
 
-	void open(webrtc::PeerConnectionFactoryInterface* peerConnectionFactory, std::string turn_url, std::string turn_username, std::string turn_password);
+	void open(webrtc::PeerConnectionFactoryInterface* peerConnectionFactory);
 	void close();
 
 	// PeerConnectionObserver implementation
@@ -46,11 +46,12 @@ public:
 
 	// CreateSessionDescriptionObserver implementation
 
-	void OnSuccess(webrtc::SessionDescriptionInterface* desc);
-	void OnFailure(const std::string& error);
+	virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc);
+	virtual void OnFailure(const std::string& error);
 
 	//
 
+	virtual void onRemoteIceCandidate(webrtc::IceCandidateInterface* candidate);
 	virtual void onRemoteSDP(webrtc::SessionDescriptionInterface* sdp);
 
 

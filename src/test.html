@@ -1,0 +1,70 @@
+<html>
+<body>
+	<h1 id="open">???</h1>
+	<h2 id="prout">prout not connected</h2>
+	<pre id="msg"></pre>
+</body>
+<script>
+
+const RTCPeerConnection = webkitRTCPeerConnection;
+
+function $(sel) { return document.querySelector(sel); }
+
+var ws = new WebSocket("ws://localhost:10000", "webrtc-pp");
+var rtc = null;
+
+ws.onopen = function() {
+	$("#open").innerHTML = "OPEN";
+	rtc = new RTCPeerConnection(null);
+
+	rtc.onicecandidate = function(e) {
+		if(!e.candidate) return;
+		$("#msg").innerHTML += "Send Local ICE candidate : " + JSON.stringify(e.candidate) + "\n";
+		ws.send(JSON.stringify(e.candidate));
+	};
+
+	rtc.oniceconnectionstatechange = function() {};
+
+	rtc.ondatachannel = function(event) {
+		var i = 0;
+  		ch = event.channel;
+  		ch.onmessage = function(event){
+			var s = String.fromCharCode.apply(null, new Uint8Array(event.data));
+			document.querySelector("#prout").innerHTML = s;
+			ch.send("non mais tu es fou ! " + (i++));
+  		};
+	};
+
+}
+
+ws.onclose = function() {
+	$("#open").innerHTML = "CLOSED";
+}
+
+ws.onmessage = function(msg) {
+	var data = JSON.parse(msg.data);
+	if(data.sdp) {
+		$("#msg").innerHTML += "Received remote SDP : " + JSON.stringify(data) + "\n";
+		rtc.setRemoteDescription(new RTCSessionDescription(data), function(){
+			rtc.createAnswer(function(sdp) {
+				rtc.setLocalDescription(sdp);
+				$("#msg").innerHTML += "Send local SDP  : " + JSON.stringify(sdp) + "\n";
+				ws.send(JSON.stringify(sdp));
+			}, function() {
+				$("#msg").innerHTML += "Can't create local SDP !\n";
+			});
+
+		}, function(){
+			$("#msg").innerHTML += "Can't set remote SDP !\n";
+		});
+	} else {
+		$("#msg").innerHTML += "Received Remote ICE candidate "+ JSON.stringify(data) +"\n";
+		rtc.addIceCandidate(new RTCIceCandidate(data), function() {}, function() {
+				$("#msg").innerHTML += "Can't add remote ICE candidate !\n";
+			}
+		);
+	}
+}
+
+</script>
+</html>
