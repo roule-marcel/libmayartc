@@ -43,21 +43,21 @@ SignalingWebSocketServer::SignalingWebSocketServer(int port) : IWebSocketServer(
 
 
 RTCDataChannel* SignalingWebSocketServer::addDataChannel(const char* name) {
-	// TODO multiplexer on RTCDataChannel ???
-	printf("Declare channel %s\n", name);
-	return NULL;
+	RTCDataChannel* ch = new RTCDataChannel(name);
+	dataChannels.push_back(ch);
+	return ch;
 }
 
 RTCVideoStreamOut* SignalingWebSocketServer::addVideoOutStream(const char* name, uint16_t w, uint16_t h) {
-	// TODO multiplexer on RTCVideoOutStream ???
-	printf("Declare video out %s\n", name);
-	return NULL;
+	RTCVideoStreamOut* out = new RTCVideoStreamOut(name, w, h);
+	videoOuts.push_back(out);
+	return out;
 }
 
 RTCVideoStreamIn* SignalingWebSocketServer::addVideoInStream(const char* name, uint16_t w, uint16_t h) {
-	// TODO multiplexer on RTCVideoInStream ???
-	printf("Declare video in %s\n", name);
-	return NULL;
+	RTCVideoStreamIn* in = new RTCVideoStreamIn(name);
+	videoIns.push_back(in);
+	return in;
 }
 
 void SignalingWebSocketServer::start() {
@@ -87,8 +87,6 @@ void SignalingWebSocketServer::run() {
 
 SignalingWebSocketPeer::SignalingWebSocketPeer(SignalingWebSocketServer* server, struct libwebsocket *ws) : IWebSocketPeer(ws) {
 	this->server = server;
-	printf("PEER CONNECTED %lu\n", (long)this);
-
 	webrtc::PeerConnectionInterface::RTCConfiguration config;
 	rtcPeer = new rtc::RefCountedObject<RTCPeer>(this);
 	rtcPeer->AddRef();
@@ -96,7 +94,6 @@ SignalingWebSocketPeer::SignalingWebSocketPeer(SignalingWebSocketServer* server,
 }
 
 SignalingWebSocketPeer::~SignalingWebSocketPeer() {
-	printf("PEER DISCONNECTED %lu\n", (long)this);
 	if(rtcPeer) rtcPeer->close();
 }
 
@@ -127,6 +124,29 @@ static void parse_remote_sdp(SignalingWebSocketPeer* peer, Json::Value message) 
 	peer->onRemoteSDP(type, sdp);
 }
 
+static void parse_stream_label(SignalingWebSocketPeer* peer, Json::Value message) {
+	std::string label;
+	std::string name;
+	rtc::GetStringFromJsonObject(message, "streamId", &label);
+	rtc::GetStringFromJsonObject(message, "name", &name);
+
+	peer->declareStreamLabel(name, label);
+}
+
+static void parse_requested_channels(SignalingWebSocketPeer* peer, Json::Value message) {
+	Json::Value value;
+	std::vector<std::string> channels;
+	std::vector<std::string> streams;
+	rtc::GetValueFromJsonObject(message, "channels", &value);
+	rtc::JsonArrayToStringVector(value, &channels);
+	rtc::GetValueFromJsonObject(message, "streams", &value);
+	rtc::JsonArrayToStringVector(value, &streams);
+
+	for(auto ch : channels) peer->rtcPeer->requestChannel(ch);
+	for(auto s : streams) peer->rtcPeer->requestVideoOut(s);
+}
+
+
 
 static void parse_signaling_message(SignalingWebSocketPeer* peer, const char * msg) {
 	std::string message = std::string(msg, strlen(msg));
@@ -138,7 +158,9 @@ static void parse_signaling_message(SignalingWebSocketPeer* peer, const char * m
 		return;
 	}
 
-	if(jmessage.isMember("sdp")) parse_remote_sdp(peer, jmessage);
+	if(jmessage.isMember("channels")) parse_requested_channels(peer, jmessage);
+	else if(jmessage.isMember("streamId")) parse_stream_label(peer, jmessage);
+	else if(jmessage.isMember("sdp")) parse_remote_sdp(peer, jmessage);
 	else  parse_remote_ice_candidate(peer, jmessage);
 }
 
@@ -147,7 +169,6 @@ static void parse_signaling_message(SignalingWebSocketPeer* peer, const char * m
 
 
 void SignalingWebSocketPeer::onMessage(char* msg) {
-	printf("MSG (%lu) : %s\n", (long)this, msg);
 	parse_signaling_message(this, msg);
 }
 
@@ -196,5 +217,40 @@ void SignalingWebSocketPeer::sendLocalICECandidate(std::string sdp_mid, int sdp_
 	std::string msg = writer.write(message);
 	send(msg.c_str());
 }
+
+
+///////////////
+// ACCESSORS //
+///////////////
+
+RTCDataChannel* SignalingWebSocketPeer::getDataChannel(std::string name) {
+	for(auto ch : server->dataChannels) {
+		if(ch->name == name) return ch;
+	}
+	return NULL;
+}
+
+RTCVideoStreamIn* SignalingWebSocketPeer::getVideoStreamIn(std::string name) {
+	for(auto s : server->videoIns) {
+		if(s->name == name) return s;
+	}
+	return NULL;
+}
+
+RTCVideoStreamIn* SignalingWebSocketPeer::getVideoStreamInByLabel(std::string label) {
+	for(auto s : videoInLabels) {
+		if(s.first == label) return getVideoStreamIn(s.second);
+	}
+	return NULL;
+}
+
+
+RTCVideoStreamOut* SignalingWebSocketPeer::getVideoStreamOut(std::string name) {
+	for(auto s : server->videoOuts) {
+		if(s->name == name) return s;
+	}
+	return NULL;
+}
+
 
 }

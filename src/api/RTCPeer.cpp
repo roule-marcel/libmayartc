@@ -19,31 +19,6 @@ namespace webrtcpp {
 static SimpleConstraints* mediaConstraints = NULL;
 
 
-class DataChannelTestObserver : public webrtc::DataChannelObserver {
-	rtc::scoped_refptr<webrtc::DataChannelInterface> dataChannel;
-	int i;
-public:
-	DataChannelTestObserver(rtc::scoped_refptr<webrtc::DataChannelInterface> dataChannel) : dataChannel(dataChannel) {
-		 i = 0;
-	}
-	virtual void OnStateChange() {
-		if(dataChannel->state() == webrtc::DataChannelInterface::DataState::kOpen) {
-			char buf[256];
-			sprintf(buf, "MESSAGEMIGNON n%08d", i++);
-			dataChannel->Send(webrtc::DataBuffer(rtc::CopyOnWriteBuffer(buf, strlen(buf)),true));
-		}
-	}
-	virtual void OnMessage(const webrtc::DataBuffer& buffer) {
-		const char* r = (const char*) buffer.data.data();
-		printf("Datachannel message : %s\n", r);
-//		char buf[256];
-//		sprintf(buf, "REPONSE %08d", i++);
-//		dataChannel->Send(webrtc::DataBuffer(rtc::CopyOnWriteBuffer(buf, strlen(buf)),true));
-	}
-};
-
-
-
 /////////////
 // RTCPeer //
 /////////////
@@ -61,32 +36,26 @@ RTCPeer::RTCPeer(SignalingWebSocketPeer* signalingPeer) : signalingPeer(signalin
 
 }
 
-static RTCVideoStreamOut* s;
 void RTCPeer::open(webrtc::PeerConnectionFactoryInterface* peerConnectionFactory) {
 	webrtc::PeerConnectionInterface::RTCConfiguration config;
 	peer = peerConnectionFactory->CreatePeerConnection(config, NULL, NULL, this);
 
 	// Create datachannels
-//	rtc::scoped_refptr<webrtc::DataChannelInterface> ch = createDataChannel("prout", 1);
-//	ch->RegisterObserver(new DataChannelTestObserver(ch));
+	for(std::string name : requestedChannels) {
+		RTCDataChannel* ch = signalingPeer->getDataChannel(name);
+		if(!ch) continue;
+		struct webrtc::DataChannelInit *init = new webrtc::DataChannelInit();
+		rtc::scoped_refptr<webrtc::DataChannelInterface> dataChannel = peer->CreateDataChannel(name, init);
+		dataChannel->RegisterObserver(ch);
+		ch->add(dataChannel);
+	}
 
 	// Create streams
-	s = createStream("test", 640,480);
-	std::thread* th = new std::thread([&](){
-		uint8_t* rgb = new uint8_t[640*480*3];
-		for(int z=0;; z++) {
-			usleep(40000);
-			for(int i=0; i<480; i++) {
-				for(int j=0; j<640; j++) {
-					uint8_t u = (z%255);
-					rgb[(i*640+j)*3] = u;
-					rgb[(i*640+j)*3+1] = 0;
-					rgb[(i*640+j)*3+2] = 0;
-				}
-			}
-			s->write(rgb);
-		}
-	});
+	for(std::string name : requestedVideoOuts) {
+		RTCVideoStreamOut* out = signalingPeer->getVideoStreamOut(name);
+		if(!out) continue;
+		peer->AddStream(out->stream);
+	}
 
 	peer->CreateOffer(this, NULL);
 }
@@ -150,37 +119,17 @@ void RTCPeer::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnecti
 
 //////////////
 // Channels //
-///////////////
+//////////////
 
-
-// Outgoing
-
-rtc::scoped_refptr<webrtc::DataChannelInterface> RTCPeer::createDataChannel(const char* name, int reliable) {
-	struct webrtc::DataChannelInit *init = new webrtc::DataChannelInit();
-	if(!reliable) {
-		init->maxRetransmits = 0;
-		init->ordered = false;
-	}
-	return peer->CreateDataChannel(name, init);
-}
-
-RTCVideoStreamOut* RTCPeer::createStream(const char* name, uint32_t w, uint32_t h) {
-	RTCVideoStreamOut* out = new RTCVideoStreamOut(name, w, h);
-	peer->AddStream(out->stream);
-	return out;
-}
-
-
-// Incoming
 
 void RTCPeer::OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-	printf("STREAMOUNET\n");
-	RTCVideoStreamIn* in = new RTCVideoStreamIn(); // TODO Keep a register of declared streams and just lookup them
+	RTCVideoStreamIn* in = signalingPeer->getVideoStreamInByLabel(stream->label());
+	if(!in) return;
 	in->setStream(stream);
 }
 
 void RTCPeer::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
-	RTCDataChannel* ch = new RTCDataChannel(data_channel);
+	// NOTE : Datachannel are created by the native server, not by the browser client !
 }
 
 

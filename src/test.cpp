@@ -20,7 +20,7 @@ int main(void){
 	sigact.sa_flags = 0;
 	sigaction(SIGINT, &sigact, (struct sigaction *)NULL);
 
-	int fd = webrtcpp_open("prout", 0);
+	int fd = webrtcpp_create("prout");
 
 	for(int i=0; i<100 && !stop; i++) {
 		//webrtcpp_write(fd, &i, sizeof(i));

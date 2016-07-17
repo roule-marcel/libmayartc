@@ -22,12 +22,18 @@ public:
 	rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer;
 	SignalingWebSocketPeer* signalingPeer;
 
+	std::vector<std::string> requestedChannels;
+	std::vector<std::string> requestedVideoOuts;
+
 public:
 	RTCPeer(SignalingWebSocketPeer* signalingPeer);
 	virtual ~RTCPeer() {}
 
 	void open(webrtc::PeerConnectionFactoryInterface* peerConnectionFactory);
 	void close();
+
+	void requestChannel(std::string name) { requestedChannels.push_back(name); }
+	void requestVideoOut(std::string name) { requestedVideoOuts.push_back(name); }
 
 	// PeerConnectionObserver implementation
 
@@ -56,9 +62,6 @@ public:
 
 
 protected:
-
-	RTCVideoStreamOut* createStream(const char* name, uint32_t w, uint32_t h);
-	rtc::scoped_refptr<webrtc::DataChannelInterface> createDataChannel(const char *name, int reliable);
 
 	void createOffer(std::string turn_url, std::string turn_username, std::string turn_password);
 

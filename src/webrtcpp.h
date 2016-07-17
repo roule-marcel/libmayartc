@@ -19,22 +19,26 @@
 
 
 
+typedef void(*webrtc_data_callback)(const char* buf, size_t size);
+typedef void(*webrtc_stream_callback)(const uint8_t* rgb, uint32_t w, uint32_t h);
+
+
 /**
  * @param int mode : {WEBRTCPP_INPUT | WEBRTCPP_OUTPUT}
  * @return a fd
  * */
-int webrtcpp_open(const char* channel, int mode);
-size_t webrtcpp_read(int fd, void* data, size_t maxsize);
+int webrtcpp_create(const char* channel);
+void webrtcpp_add_callback(int fd, webrtc_data_callback cb);
 size_t webrtcpp_write(int fd, void* data, size_t size);
 void webrtcpp_close(int fd);
 
 
 
-int webrtcpp_video_in_open(const char* channel, int mode, uint32_t w, uint32_t h);
-size_t webrtcpp_video_in_read(int fd, unsigned char* rgb);
+int webrtcpp_video_in_create(const char* channel, int mode, uint32_t w, uint32_t h);
+void webrtcpp_video_in_add_callback(int fd, webrtc_stream_callback cb);
 void webrtcpp_video_in_close(int fd);
 
-int webrtcpp_video_out_open(const char* channel, int mode, uint32_t w, uint32_t h);
+int webrtcpp_video_out_create(const char* channel, int mode, uint32_t w, uint32_t h);
 size_t webrtcpp_video_out_write(int fd, unsigned char* rgb);
 void webrtcpp_video_out_close(int fd);
 

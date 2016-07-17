@@ -25,6 +25,7 @@ extern webrtc::PeerConnectionFactoryInterface* rtcPeerConnectionFactory;
 ///////////////////////
 
 RTCVideoStreamOut::RTCVideoStreamOut(const char* name, uint32_t w, uint32_t h) {
+	this->name = name;
 	capturer = new MemoryCapturer(w,h);
 	rtc::scoped_refptr<webrtc::VideoTrackInterface> track(rtcPeerConnectionFactory->CreateVideoTrack(name,rtcPeerConnectionFactory->CreateVideoSource(capturer, NULL)));
 	stream = rtcPeerConnectionFactory->CreateLocalMediaStream(name);
@@ -42,7 +43,8 @@ bool RTCVideoStreamOut::write(const uint8_t* rgb) {
 // RTCVideoStreamIn //
 //////////////////////
 
-RTCVideoStreamIn::RTCVideoStreamIn() {
+RTCVideoStreamIn::RTCVideoStreamIn(const char* name) {
+	this->name = name;
 	w = h = 0;
 	renderer = new MemoryRenderer();
 	renderer->setFrameObserver(this);
@@ -61,19 +63,8 @@ void RTCVideoStreamIn::setSize(uint32_t w, uint32_t h) {
 }
 
 
-bool RTCVideoStreamIn::read(unsigned char* argb) {
-	// TODO semaphore stuff
-	return false;
-}
-
 void RTCVideoStreamIn::onFrame(unsigned char* rgb, uint32_t w, uint32_t h) {
-	// TODO read stuff
-	printf("FRAME : %ux%u\n", w,h);
-
-//	static char s[256];
-//	static int i=0;
-//	sprintf(s, "img_%08d.jpg", i++);
-//	save_jpg(rgb, w, h, s);
+	for(auto cb : callbacks) cb(rgb, w, h);
 }
 
 

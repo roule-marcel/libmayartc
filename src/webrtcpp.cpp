@@ -42,15 +42,15 @@ static void webrtcpp_init(int port = DEFAULT_PORT) {
 // WEBRTCPP_DATA CHANNELS //
 ////////////////////////////
 
-int webrtcpp_open(const char* channel, int mode) {
+int webrtcpp_create(const char* channel) {
 	webrtcpp_init();
 	channels_fd[nbChannelsFd] = server->addDataChannel(channel);
 	return nbChannelsFd++;
 }
 
-size_t webrtcpp_read(int fd, void* data, size_t maxsize) {
+void webrtcpp_add_callback(int fd, webrtc_data_callback cb) {
 	if(fd >= nbChannelsFd || !channels_fd[fd]) throw "No such channel";
-	return channels_fd[fd]->read((char*)data, maxsize);
+	channels_fd[fd]->addCallback(cb);
 }
 
 size_t webrtcpp_write(int fd, void* data, size_t size) {
@@ -69,15 +69,15 @@ void webrtcpp_close(int fd) {
 // WEBRTCPP_VIDEO STREAMS //
 ////////////////////////////
 
-int webrtcpp_video_in_open(const char* channel, int mode, uint32_t w, uint32_t h) {
+int webrtcpp_video_in_create(const char* channel, int mode, uint32_t w, uint32_t h) {
 	webrtcpp_init();
 	streams_in_fd[nbStreamsInFd] = server->addVideoInStream(channel, w ,h);
 	return nbStreamsInFd++;
 }
 
-size_t webrtcpp_video_in_read(int fd, unsigned char* rgb) {
+void webrtcpp_video_in_add_callback(int fd, webrtc_stream_callback cb) {
 	if(fd >= nbStreamsOutFd || !streams_out_fd[fd]) throw "No such video stream";
-	return streams_in_fd[fd]->read(rgb);
+	streams_in_fd[fd]->addCallback(cb);
 }
 
 void webrtcpp_video_in_close(int fd) {
@@ -87,7 +87,7 @@ void webrtcpp_video_in_close(int fd) {
 }
 
 
-int webrtcpp_video_out_open(const char* channel, int mode, uint32_t w, uint32_t h) {
+int webrtcpp_video_out_create(const char* channel, int mode, uint32_t w, uint32_t h) {
 	webrtcpp_init();
 	streams_out_fd[nbStreamsOutFd] = server->addVideoOutStream(channel, w, h);
 	return nbStreamsOutFd++;

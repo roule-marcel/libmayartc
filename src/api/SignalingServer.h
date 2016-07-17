@@ -17,6 +17,7 @@ class SignalingWebSocketPeer : public IWebSocketPeer {
 public:
 	SignalingWebSocketServer* server;
 	RTCPeer* rtcPeer;
+	std::map<std::string, std::string> videoInLabels;
 
 public:
 	SignalingWebSocketPeer(SignalingWebSocketServer* server, struct libwebsocket *ws);
@@ -28,12 +29,26 @@ public:
 
 	void sendLocalSDP(std::string type, std::string sdp);
 	void sendLocalICECandidate(std::string sdp_mid, int sdp_mlineindex, std::string sdp);
+
+	void declareStreamLabel(std::string name, std::string label) { videoInLabels[label] = name; }
+
+	RTCDataChannel* getDataChannel(std::string name);
+	RTCVideoStreamIn* getVideoStreamIn(std::string name);
+	RTCVideoStreamIn* getVideoStreamInByLabel(std::string label);
+	RTCVideoStreamOut* getVideoStreamOut(std::string name);
+
 };
 
 
 
 
 class SignalingWebSocketServer : public IWebSocketServer {
+
+public:
+	std::vector<RTCDataChannel*> dataChannels;
+	std::vector<RTCVideoStreamIn*> videoIns;
+	std::vector<RTCVideoStreamOut*> videoOuts;
+
 private:
 	std::thread th;
 public:

@@ -18,6 +18,7 @@ class MemoryRenderer;
 
 class RTCVideoStreamOut {
 public:
+	std::string name;
 	rtc::scoped_refptr<webrtc::MediaStreamInterface> stream;
 	MemoryCapturer* capturer;
 
@@ -32,18 +33,24 @@ public:
 
 class RTCVideoStreamIn : public FrameObserver {
 public:
+	typedef void(*Callback)(const uint8_t* rgb, uint32_t w, uint32_t h);
+
+	std::string name;
+
 	rtc::scoped_refptr<webrtc::MediaStreamInterface> stream;
 	MemoryRenderer* renderer;
 	uint32_t w,h;
 
+	std::vector<Callback> callbacks;
+
 public:
-	RTCVideoStreamIn();
+	RTCVideoStreamIn(const char* name);
 	virtual ~RTCVideoStreamIn() {}
 
 	void setSize(uint32_t w, uint32_t h);
 	void setStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream);
 
-	bool read(uint8_t* rgb);
+	void addCallback(Callback cb) {callbacks.push_back(cb);}
 
 protected:
 	virtual void onFrame(uint8_t* rgb, uint32_t w, uint32_t h);
