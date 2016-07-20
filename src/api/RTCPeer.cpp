@@ -26,8 +26,8 @@ static SimpleConstraints* mediaConstraints = NULL;
 RTCPeer::RTCPeer(SignalingWebSocketPeer* signalingPeer) : signalingPeer(signalingPeer) {
 	if(!mediaConstraints) {
 		mediaConstraints = new SimpleConstraints;
-		mediaConstraints->AddMandatory("EnableDtlsSrtp", "false");
-		mediaConstraints->AddMandatory("DtlsSrtpKeyAgreement", "false");
+		mediaConstraints->AddMandatory("EnableDtlsSrtp", "true");
+		mediaConstraints->AddMandatory("DtlsSrtpKeyAgreement", "true");
 		mediaConstraints->AddMandatory("kEnableSctpDataChannels", "true");
 		mediaConstraints->AddMandatory("OfferToReceiveAudio", "true");
 		mediaConstraints->AddMandatory("OfferToReceiveVideo", "true");
@@ -38,12 +38,19 @@ RTCPeer::RTCPeer(SignalingWebSocketPeer* signalingPeer) : signalingPeer(signalin
 
 void RTCPeer::open(webrtc::PeerConnectionFactoryInterface* peerConnectionFactory) {
 	webrtc::PeerConnectionInterface::RTCConfiguration config;
-	peer = peerConnectionFactory->CreatePeerConnection(config, NULL, NULL, this);
+	peer = peerConnectionFactory->CreatePeerConnection(config, mediaConstraints, NULL, NULL, this);
+}
 
+void RTCPeer::close() {
+	peer->Close();
+}
+
+void RTCPeer::realize() {
 	// Create datachannels
 	for(std::string name : requestedChannels) {
 		RTCDataChannel* ch = signalingPeer->getDataChannel(name);
 		if(!ch) continue;
+		printf("REQ CH : %s\n", name.c_str());
 		struct webrtc::DataChannelInit *init = new webrtc::DataChannelInit();
 		rtc::scoped_refptr<webrtc::DataChannelInterface> dataChannel = peer->CreateDataChannel(name, init);
 		dataChannel->RegisterObserver(ch);
@@ -53,17 +60,14 @@ void RTCPeer::open(webrtc::PeerConnectionFactoryInterface* peerConnectionFactory
 	// Create streams
 	for(std::string name : requestedVideoOuts) {
 		RTCVideoStreamOut* out = signalingPeer->getVideoStreamOut(name);
+		printf("test REQ ST : %s\n", name.c_str());
 		if(!out) continue;
+		printf("REQ ST : %s\n", name.c_str());
 		peer->AddStream(out->stream);
 	}
 
-	peer->CreateOffer(this, NULL);
+	peer->CreateOffer(this, mediaConstraints);
 }
-
-void RTCPeer::close() {
-	peer->Close();
-}
-
 
 ///////////////
 // INTERNALS //
@@ -76,7 +80,7 @@ void RTCPeer::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
 	peer->SetLocalDescription(DummySetSessionDescriptionObserver::Create(0), desc);
 	if(!desc->ToString(&sdp)) return;
 
-	printf("Send Local SDP : %s\n", sdp.c_str());
+	printf("Send Local SDP\n");
 
 	signalingPeer->sendLocalSDP(desc->type(), sdp);
 }
@@ -87,14 +91,14 @@ void RTCPeer::OnFailure(const std::string& error) {
 
 void RTCPeer::onRemoteSDP(webrtc::SessionDescriptionInterface* sdp) {
 	std::string s; sdp->ToString(&s);
-	printf("Received Remote SDP : %s\n", s.c_str());
+	printf("Received Remote SDP \n");
 	peer->SetRemoteDescription(DummySetSessionDescriptionObserver::Create(0),sdp);
 }
 
 void RTCPeer::onRemoteIceCandidate(webrtc::IceCandidateInterface* candidate) {
 	std::string s;
 	if (!candidate->ToString(&s)) return;
-	printf("Received Remote ICE Candidate : %s\n", s.c_str());
+	printf("Received Remote ICE Candidate\n");
 	peer->AddIceCandidate(candidate);
 }
 
@@ -103,7 +107,7 @@ void RTCPeer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
 	int sdp_mlineindex = candidate->sdp_mline_index();
 	std::string sdp;
 	if (!candidate->ToString(&sdp)) return;
-	printf("Send ICE Candidate %s\n", sdp.c_str());
+	printf("Send ICE Candidate\n");
 	signalingPeer->sendLocalICECandidate(sdp_mid, sdp_mlineindex, sdp);
 }
 
@@ -123,6 +127,7 @@ void RTCPeer::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnecti
 
 
 void RTCPeer::OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
+	printf("STREAM !!!!!!!!!!!!!!!\n");
 	RTCVideoStreamIn* in = signalingPeer->getVideoStreamInByLabel(stream->label());
 	if(!in) return;
 	in->setStream(stream);

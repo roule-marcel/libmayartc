@@ -68,9 +68,10 @@ static int callback_websocket(struct libwebsocket_context *context, struct libwe
 
 int IWebSocketPeer::send(const char* msg) {
 	int len = strlen(msg);
-	unsigned char* out = (unsigned char *)malloc(sizeof(char)*(LWS_SEND_BUFFER_PRE_PADDING + len + LWS_SEND_BUFFER_POST_PADDING));
-	memcpy (out + LWS_SEND_BUFFER_PRE_PADDING, msg, len );
-	int n = libwebsocket_write(ws, out + LWS_SEND_BUFFER_PRE_PADDING, len, LWS_WRITE_TEXT);
-	free(out);
-	return n;
+	unsigned char* _out_buf = new unsigned char [LWS_SEND_BUFFER_PRE_PADDING + len + LWS_SEND_BUFFER_POST_PADDING];
+	memcpy (_out_buf + LWS_SEND_BUFFER_PRE_PADDING, msg, len );
+
+	libwebsocket_write(ws, _out_buf + LWS_SEND_BUFFER_PRE_PADDING, len, LWS_WRITE_TEXT);
+	delete _out_buf;
+	return 0;
 }

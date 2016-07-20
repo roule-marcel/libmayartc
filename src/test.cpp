@@ -1,8 +1,9 @@
 #include <iostream>
 #include <signal.h>
 #include <unistd.h>
-
+#include <thread>
 #include "webrtcpp.h"
+#include "util/jpg.h"
 
 static bool stop = false;
 
@@ -20,16 +21,38 @@ int main(void){
 	sigact.sa_flags = 0;
 	sigaction(SIGINT, &sigact, (struct sigaction *)NULL);
 
-	int fd = webrtcpp_create("prout");
+	printf("Create Datachannel 'prout'\n");
+	int prout = webrtcpp_create("prout");
+	webrtcpp_add_callback(prout, [&](const char* buf, size_t size){
+		printf("prout: %s\n", buf);
+	});
 
-	for(int i=0; i<100 && !stop; i++) {
-		//webrtcpp_write(fd, &i, sizeof(i));
-		sleep(100);
+	printf("Create Video In 'camera'\n");
+	int camera = webrtcpp_video_in_create("camera", 0, 640,480);
+	webrtcpp_video_in_add_callback(camera, [&](const uint8_t* rgb, uint32_t w, uint32_t h) {
+		static char camera_out[256];
+		static int i=0;
+		printf("CAMERA %d\n", i);
+//		sprintf(camera_out, "camera_%08d.jpg", i++);
+//		save_jpg(rgb, w,h, camera_out);
+	});
+
+	printf("Create Video Out 'stuff'\n");
+	int stuff = webrtcpp_video_out_create("stuff", 0, 640, 480);
+
+	uint8_t* rgb = new uint8_t[640*480*3];
+	for(int z=0; ; z++) {
+		usleep(100000);
+		for(int i=0; i<640*480; i++) rgb[i*3] = (((i+z)/10)%3) ? 255 : 0;
+		webrtcpp_video_out_write(stuff, rgb);
 	}
 
-//	webrtcpp_close(fd);
+	sleep(1000);
+
+	getchar();
 	exit(0);
 
 	return 0;
 	} catch(const char* error) { fprintf(stderr, "ERROR : %s\n", error); return 1; }
+	catch(...) {fprintf(stderr, "error\n"); }
 }

@@ -20,6 +20,8 @@
 #include "stream/RTCDataChannel.h"
 #include "stream/RTCVideoStream.h"
 
+#define MIN(a,b) ((a<b) ? (a) : (b))
+
 namespace webrtcpp {
 
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> rtcPeerConnectionFactory;
@@ -61,15 +63,13 @@ RTCVideoStreamIn* SignalingWebSocketServer::addVideoInStream(const char* name, u
 }
 
 void SignalingWebSocketServer::start() {
+	sem_init(&sem, 0, 0);
 	th = std::thread([&](){
-		printf("Started\n");
-
 		initRTC();
-
+		sem_post(&sem);
 		this->run();
-
-		printf("Finished\n");
 	});
+	sem_wait(&sem);
 }
 
 void SignalingWebSocketServer::run() {
@@ -136,13 +136,18 @@ static void parse_stream_label(SignalingWebSocketPeer* peer, Json::Value message
 static void parse_requested_channels(SignalingWebSocketPeer* peer, Json::Value message) {
 	Json::Value value;
 	std::vector<std::string> channels;
-	std::vector<std::string> streams;
 	rtc::GetValueFromJsonObject(message, "channels", &value);
 	rtc::JsonArrayToStringVector(value, &channels);
+
+	for(auto ch : channels) peer->rtcPeer->requestChannel(ch);
+}
+
+static void parse_requested_streams(SignalingWebSocketPeer* peer, Json::Value message) {
+	Json::Value value;
+	std::vector<std::string> streams;
 	rtc::GetValueFromJsonObject(message, "streams", &value);
 	rtc::JsonArrayToStringVector(value, &streams);
 
-	for(auto ch : channels) peer->rtcPeer->requestChannel(ch);
 	for(auto s : streams) peer->rtcPeer->requestVideoOut(s);
 }
 
@@ -150,6 +155,9 @@ static void parse_requested_channels(SignalingWebSocketPeer* peer, Json::Value m
 
 static void parse_signaling_message(SignalingWebSocketPeer* peer, const char * msg) {
 	std::string message = std::string(msg, strlen(msg));
+
+//	printf("[MSG] %s\n", msg);
+	if(message == "realize") { peer->realize(); return; }
 
 	Json::Reader reader;
 	Json::Value jmessage;
@@ -159,6 +167,7 @@ static void parse_signaling_message(SignalingWebSocketPeer* peer, const char * m
 	}
 
 	if(jmessage.isMember("channels")) parse_requested_channels(peer, jmessage);
+	else if(jmessage.isMember("streams")) parse_requested_streams(peer, jmessage);
 	else if(jmessage.isMember("streamId")) parse_stream_label(peer, jmessage);
 	else if(jmessage.isMember("sdp")) parse_remote_sdp(peer, jmessage);
 	else  parse_remote_ice_candidate(peer, jmessage);
@@ -200,10 +209,27 @@ void SignalingWebSocketPeer::sendLocalSDP(std::string type, std::string sdp) {
 	Json::Value message;
 
 	message["type"] = type;
-	message["sdp"] = sdp;
 
-	std::string msg = writer.write(message);
-	send(msg.c_str());
+	printf("SDP : \n%s\n", sdp.c_str());
+
+	if(sdp.length() > 800) {
+		for(int i=0; i<sdp.length(); i+=800) {
+			int n = MIN(sdp.length()-i+1,800);
+			message["sdpPartial"] = sdp.substr(i, n);
+
+			std::string msg = writer.write(message);
+			send(msg.c_str());
+		}
+		message.removeMember("sdpPartial");
+		message["endSdp"] = "yes";
+		std::string msg = writer.write(message);
+		send(msg.c_str());
+	}
+	else {
+		message["sdp"] = sdp;
+		std::string msg = writer.write(message);
+		send(msg.c_str());
+	}
 }
 
 void SignalingWebSocketPeer::sendLocalICECandidate(std::string sdp_mid, int sdp_mlineindex, std::string sdp) {
@@ -216,6 +242,10 @@ void SignalingWebSocketPeer::sendLocalICECandidate(std::string sdp_mid, int sdp_
 
 	std::string msg = writer.write(message);
 	send(msg.c_str());
+}
+
+void SignalingWebSocketPeer::realize() {
+	rtcPeer->realize();
 }
 
 

@@ -28,7 +28,7 @@ class IWebSocketServer;
 
 
 class IWebSocketServer {
-protected:
+public:
 	int bQuit = 0;
 	struct libwebsocket_context *context;
 

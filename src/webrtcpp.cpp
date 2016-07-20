@@ -76,12 +76,12 @@ int webrtcpp_video_in_create(const char* channel, int mode, uint32_t w, uint32_t
 }
 
 void webrtcpp_video_in_add_callback(int fd, webrtc_stream_callback cb) {
-	if(fd >= nbStreamsOutFd || !streams_out_fd[fd]) throw "No such video stream";
+	if(fd >= nbStreamsInFd || !streams_in_fd[fd]) throw "No such video stream";
 	streams_in_fd[fd]->addCallback(cb);
 }
 
 void webrtcpp_video_in_close(int fd) {
-	if(fd >= nbStreamsOutFd || !streams_in_fd[fd]) throw "No such video stream";
+	if(fd >= nbStreamsInFd || !streams_in_fd[fd]) throw "No such video stream";
 	delete streams_in_fd[fd];
 	streams_in_fd[fd] = NULL;
 }

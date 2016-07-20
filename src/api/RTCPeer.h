@@ -35,6 +35,8 @@ public:
 	void requestChannel(std::string name) { requestedChannels.push_back(name); }
 	void requestVideoOut(std::string name) { requestedVideoOuts.push_back(name); }
 
+	void realize();
+
 	// PeerConnectionObserver implementation
 
 	virtual void OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream);

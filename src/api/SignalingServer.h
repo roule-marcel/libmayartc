@@ -6,6 +6,7 @@
 #include <thread>
 #include "../util/websocket.h"
 #include "RTCPeer.h"
+#include <semaphore.h>
 
 namespace webrtcpp {
 
@@ -30,6 +31,8 @@ public:
 	void sendLocalSDP(std::string type, std::string sdp);
 	void sendLocalICECandidate(std::string sdp_mid, int sdp_mlineindex, std::string sdp);
 
+	void realize();
+
 	void declareStreamLabel(std::string name, std::string label) { videoInLabels[label] = name; }
 
 	RTCDataChannel* getDataChannel(std::string name);
@@ -49,8 +52,11 @@ public:
 	std::vector<RTCVideoStreamIn*> videoIns;
 	std::vector<RTCVideoStreamOut*> videoOuts;
 
+
 private:
+	sem_t sem;
 	std::thread th;
+
 public:
 	SignalingWebSocketServer(int port);
 
