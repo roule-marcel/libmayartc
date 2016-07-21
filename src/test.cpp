@@ -4,12 +4,16 @@
 #include <thread>
 #include "webrtcpp.h"
 #include "util/jpg.h"
+#include "util/v4l2/V4LIn.h"
 
 static bool stop = false;
+
+V4LIn* v4lin = NULL;
 
 void signal_handler(int sig){
 	std::cout << "Caught signal" << std::endl;
 	stop = true;
+	if(v4lin) delete v4lin;
 	exit(0);
 }
 
@@ -40,14 +44,18 @@ int main(void){
 	printf("Create Video Out 'stuff'\n");
 	int stuff = webrtcpp_video_out_create("stuff", 0, 640, 480);
 
+
+	V4LIn* v4lin = new V4LIn("/dev/video0");
+	sleep(1);
+	v4lin->start();
+
+
 	uint8_t* rgb = new uint8_t[640*480*3];
 	for(int z=0; ; z++) {
-		usleep(100000);
-		for(int i=0; i<640*480; i++) rgb[i*3] = (((i+z)/10)%3) ? 255 : 0;
-		webrtcpp_video_out_write(stuff, rgb);
+		v4lin->readFrame();
+		webrtcpp_video_out_write(stuff, v4lin->data);
 	}
 
-	sleep(1000);
 
 	getchar();
 	exit(0);

@@ -11,8 +11,9 @@
 
 function $(sel) { return document.querySelector(sel); }
 
+var URI = document.location.hostname + ":10000";
 
-webrtcpp_open("localhost:10000", "prout", function(datachannel) {
+webrtcpp_open(URI, "prout", function(datachannel) {
 	$("#prout").innerHTML = "prout connected";
 	var i = 0;
 	datachannel.onmessage = function(event){
@@ -24,24 +25,24 @@ webrtcpp_open("localhost:10000", "prout", function(datachannel) {
 	datachannel.send("---------------- formidable !!----------------");
 });
 
-webrtcpp_open_video_in("localhost:10000", "stuff", function(stream) {
+webrtcpp_open_video_in(URI, "stuff", function(stream) {
 	$("#video").src = URL.createObjectURL(stream);
 });
 
 
-var localStream = null;
-
-navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-navigator.getUserMedia({ video: true },
-	function(stream) {
-		$("#localvideo").src = URL.createObjectURL(stream);
-
-		webrtcpp_open_video_out("localhost:10000", "camera", stream);
-	},
-	function(error) {
-		console.error('navigator.getUserMedia error: ', error);
-	}
-);
+// var localStream = null;
+//
+// navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+// navigator.getUserMedia({ video: true },
+// 	function(stream) {
+// 		$("#localvideo").src = URL.createObjectURL(stream);
+//
+// 		webrtcpp_open_video_out("localhost:10000", "camera", stream);
+// 	},
+// 	function(error) {
+// 		console.error('navigator.getUserMedia error: ', error);
+// 	}
+// );
 
 
 </script>
