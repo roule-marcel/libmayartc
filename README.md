@@ -12,4 +12,4 @@ https://webrtc.org/native-code/development/
 #### Example code 
 https://chromium.googlesource.com/external/webrtc/+/master/webrtc/examples/peerconnection
 
-![http://static.hitek.fr/img/actualite/2013/11/22/i_main-libre-burger-1.jpg](une image)
+![une image](http://static.hitek.fr/img/actualite/2013/11/22/i_main-libre-burger-1.jpg)
