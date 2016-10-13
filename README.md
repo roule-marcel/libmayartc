@@ -11,5 +11,3 @@ https://webrtc.org/native-code/development/
 
 #### Example code 
 https://chromium.googlesource.com/external/webrtc/+/master/webrtc/examples/peerconnection
-
-[http://toto.com]
