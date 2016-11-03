@@ -89,3 +89,9 @@ bin/deps/%: src/%.cpp
 clean:
 	rm -rf build
 	rm -rf bin
+
+	
+install:
+	cp -f build/libwebrtcpp.so /usr/lib
+	cp -f src/webrtcpp.h /usr/include
+	
