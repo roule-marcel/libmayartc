@@ -50,7 +50,7 @@ while(getline(&buf, &n, stdin)) {
 ## Install dependencies
 
 ##### Builds
-- 31/03/2017 : Builds with webrtc [f0e1f60](https://chromium.googlesource.com/external/webrtc.git/+/f0e1f60b0c253377be6cc7fa3745467503d2631b)
+- 31/03/2017 : Builds with webrtc commit [f0e1f60](https://chromium.googlesource.com/external/webrtc.git/+/f0e1f60b0c253377be6cc7fa3745467503d2631b)
 
 ##### WebRTC source repository
 
