@@ -39,7 +39,6 @@ public:
 	void SetScreencast(bool is_screencast) { is_screencast_ = is_screencast; }
 	virtual bool IsScreencast() const { return is_screencast_; }
 	bool GetPreferredFourccs(std::vector<uint32_t>* fourccs);
-	void SignalCapturedFrame(cricket::CapturedFrame* frame) { SignalFrameCaptured(this, frame); }
 	void ResetSupportedFormats(const std::vector<cricket::VideoFormat>& formats) { SetSupportedFormats(formats); }
 	void SetRotation(webrtc::VideoRotation rotation) { rotation_ = rotation; }
 	webrtc::VideoRotation GetRotation() { return rotation_; }

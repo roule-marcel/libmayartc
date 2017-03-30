@@ -6,8 +6,8 @@
  */
 
 #include "MemoryCapturer.hpp"
-
-
+#include "webrtc/api/video/video_frame.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 
 
 namespace webrtcpp {
@@ -33,29 +33,13 @@ bool MemoryCapturer::captureFrame(const unsigned char* rgb) {
 
 	size_t size = w*h*4;
 
-	cricket::CapturedFrame frame;
-	frame.width = w;
-	frame.height = h;
-	frame.fourcc = cricket::FOURCC_ARGB;
-	frame.data_size = size;
-	frame.time_stamp = initial_unix_timestamp_ + next_timestamp_;
+	rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(w,h);
+	webrtc::ConvertToI420(webrtc::kRGB24, rgb, 0,0, w,h, 0, rotation_, buffer);
+	webrtc::VideoFrame frame(buffer, initial_unix_timestamp_ + next_timestamp_, 0, rotation_);
 	next_timestamp_ += 33333333;
 
-	char* argb = new char[size];
-	for(uint y = 0; y<h; y++) {
-		for(uint x=0; x<w; x++) {
-			argb[(y*w+x)*4+2] = rgb[(y*w+x)*3];
-			argb[(y*w+x)*4+1] = rgb[(y*w+x)*3+1];
-			argb[(y*w+x)*4] = rgb[(y*w+x)*3+2];
-		}
-	}
+	this->OnFrame(frame, w,h);
 
-	frame.data = argb;
-	frame.rotation = rotation_;
-
-	SignalFrameCaptured(this, &frame);
-
-	delete argb; argb = NULL;
 	return true;
 }
 

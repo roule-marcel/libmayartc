@@ -39,7 +39,6 @@ public:
 
 	rtc::scoped_refptr<webrtc::MediaStreamInterface> stream;
 	MemoryRenderer* renderer;
-	uint32_t w,h;
 
 	std::vector<Callback> callbacks;
 
@@ -47,7 +46,6 @@ public:
 	RTCVideoStreamIn(const char* name);
 	virtual ~RTCVideoStreamIn() {}
 
-	void setSize(uint32_t w, uint32_t h);
 	void setStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream);
 
 	void addCallback(Callback cb) {callbacks.push_back(cb);}

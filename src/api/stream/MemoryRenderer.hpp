@@ -23,10 +23,9 @@ public:
 
 
 
-class MemoryRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
+class MemoryRenderer : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
 public:
 	int w,h;
-	unsigned char* argb;
 	unsigned char* rgb;
 	FrameObserver* frameObserver;
 
@@ -34,13 +33,12 @@ public:
 	MemoryRenderer();
 	virtual ~MemoryRenderer();
 
-	void setSize(int w, int h);
 	void setFrameObserver(FrameObserver* o);
 
 
 	// VideoSinkInterface implementation
 
-	void OnFrame(const cricket::VideoFrame& frame);
+	void OnFrame(const webrtc::VideoFrame& frame);
 
 };
 

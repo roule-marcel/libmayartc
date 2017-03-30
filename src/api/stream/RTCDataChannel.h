@@ -40,8 +40,10 @@ public:
 		for(auto ch : channels) ch->Close();
 	}
 
-	bool write(const char* buf, size_t size) {
-		webrtc::DataBuffer dataBuffer(rtc::CopyOnWriteBuffer(buf, size),true);
+	bool write(const char* buf, size_t size, bool bBinary = false) {
+		std::string s(buf);
+		std::cout << "Write : " << s << "\n";
+		webrtc::DataBuffer dataBuffer(s);
 		for(auto ch : channels) ch->Send(dataBuffer);
 		return true;
 	}

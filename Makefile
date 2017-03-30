@@ -55,14 +55,22 @@ DEBUG=-g
 
 SRC=$(shell find src -name "*.cpp" | grep -v test)
 
-all: build/test build/test_websocket
+all: build/libwebrtcpp.so build/test_datachannel build/test_video_in build/test_video_out build/unittest_websocket
 
 
-build/test_websocket: bin/test_websocket.o bin/util/websocket.o
+build/unittest_websocket: bin/test/unittest_websocket.o bin/util/websocket.o
 	mkdir -p `dirname $@` 
 	${CXX} ${DEBUG} ${LDFLAGS} -Lbuild/ $^ -o $@ -lwebsockets
 
-build/test: bin/test.o build/libwebrtcpp.so
+build/test_datachannel: bin/test/test_datachannel.o build/libwebrtcpp.so
+	mkdir -p `dirname $@` 
+	${CXX} ${DEBUG} ${LDFLAGS} -Lbuild/ $< -o $@ -lwebrtcpp -ljpeg -lwebsockets
+
+build/test_video_in: bin/test/test_video_in.o build/libwebrtcpp.so
+	mkdir -p `dirname $@` 
+	${CXX} ${DEBUG} ${LDFLAGS} -Lbuild/ $< -o $@ -lwebrtcpp -ljpeg -lwebsockets
+
+build/test_video_out: bin/test/test_video_out.o build/libwebrtcpp.so
 	mkdir -p `dirname $@` 
 	${CXX} ${DEBUG} ${LDFLAGS} -Lbuild/ $< -o $@ -lwebrtcpp -ljpeg -lwebsockets
 

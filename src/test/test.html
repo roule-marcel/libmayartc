@@ -11,6 +11,7 @@
 
 function $(sel) { return document.querySelector(sel); }
 
+
 var URI = document.location.hostname + ":10000";
 
 webrtcpp_open(URI, "prout", function(datachannel) {
@@ -22,7 +23,12 @@ webrtcpp_open(URI, "prout", function(datachannel) {
 
 		datachannel.send("non mais tu es fou ! " + (i++));
 	};
-	datachannel.send("---------------- formidable !!----------------");
+	
+	function send_loop(i) {
+		datachannel.send("Message n°"+i);
+	 	setTimeout(function() {send_loop(i+1);}, 1000);
+	}
+	send_loop(0);
 });
 
 webrtcpp_open_video_in(URI, "stuff", function(stream) {

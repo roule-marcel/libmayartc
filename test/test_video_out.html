@@ -1,0 +1,29 @@
+<html>
+<body>
+	<script src="js/webrtcpp.js"></script>
+	<video id="localvideo" width=640px height=480px autoplay></video>
+</body>
+<script>
+
+navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+function $(sel) { return document.querySelector(sel); }
+
+var URI = document.location.hostname + ":10000";
+
+var localStream = null;
+
+// Capture images from the webcam
+navigator.getUserMedia({ video: true },
+	function(stream) {
+		$("#localvideo").src = URL.createObjectURL(stream);
+		
+		// Send every frames to the channel called 'camera'
+ 		webrtcpp_open_video_out(URI, "camera", stream);
+ 		
+	},
+	function(error) { console.error('navigator.getUserMedia error: ', error); }
+);
+
+
+</script>
+</html>

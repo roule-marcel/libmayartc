@@ -50,7 +50,6 @@ void RTCPeer::realize() {
 	for(std::string name : requestedChannels) {
 		RTCDataChannel* ch = signalingPeer->getDataChannel(name);
 		if(!ch) continue;
-		printf("REQ CH : %s\n", name.c_str());
 		struct webrtc::DataChannelInit *init = new webrtc::DataChannelInit();
 		rtc::scoped_refptr<webrtc::DataChannelInterface> dataChannel = peer->CreateDataChannel(name, init);
 		dataChannel->RegisterObserver(ch);
@@ -60,9 +59,7 @@ void RTCPeer::realize() {
 	// Create streams
 	for(std::string name : requestedVideoOuts) {
 		RTCVideoStreamOut* out = signalingPeer->getVideoStreamOut(name);
-		printf("test REQ ST : %s\n", name.c_str());
 		if(!out) continue;
-		printf("REQ ST : %s\n", name.c_str());
 		peer->AddStream(out->stream);
 	}
 
@@ -80,8 +77,6 @@ void RTCPeer::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
 	peer->SetLocalDescription(DummySetSessionDescriptionObserver::Create(0), desc);
 	if(!desc->ToString(&sdp)) return;
 
-	printf("Send Local SDP\n");
-
 	signalingPeer->sendLocalSDP(desc->type(), sdp);
 }
 
@@ -91,14 +86,12 @@ void RTCPeer::OnFailure(const std::string& error) {
 
 void RTCPeer::onRemoteSDP(webrtc::SessionDescriptionInterface* sdp) {
 	std::string s; sdp->ToString(&s);
-	printf("Received Remote SDP \n");
 	peer->SetRemoteDescription(DummySetSessionDescriptionObserver::Create(0),sdp);
 }
 
 void RTCPeer::onRemoteIceCandidate(webrtc::IceCandidateInterface* candidate) {
 	std::string s;
 	if (!candidate->ToString(&s)) return;
-	printf("Received Remote ICE Candidate\n");
 	peer->AddIceCandidate(candidate);
 }
 
@@ -107,7 +100,6 @@ void RTCPeer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
 	int sdp_mlineindex = candidate->sdp_mline_index();
 	std::string sdp;
 	if (!candidate->ToString(&sdp)) return;
-	printf("Send ICE Candidate\n");
 	signalingPeer->sendLocalICECandidate(sdp_mid, sdp_mlineindex, sdp);
 }
 
@@ -127,14 +119,13 @@ void RTCPeer::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnecti
 
 
 void RTCPeer::OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-	printf("STREAM !!!!!!!!!!!!!!!\n");
 	RTCVideoStreamIn* in = signalingPeer->getVideoStreamInByLabel(stream->label());
 	if(!in) return;
 	in->setStream(stream);
 }
 
 void RTCPeer::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
-	// NOTE : Datachannel are created by the native server, not by the browser client !
+	// NOTE : Datachannel are created by the native server, not by the client browser !
 }
 
 

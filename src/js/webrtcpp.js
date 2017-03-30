@@ -65,7 +65,6 @@ function RTCSignaling(ip) {
 
 	this.ws.onmessage = function(msg) {
 		var data = JSON.parse(msg.data);
-	//	console.log(data);
 		if(data.sdpPartial) {
 			if(!that._sdpData) that._sdpData = {type: data.type, sdp:""};
 			that._sdpData.sdp += data.sdpPartial;
@@ -96,13 +95,8 @@ RTCSignaling.prototype.addVideoOut = function(name, stream) {
 	this.streams.push(stream);
 }
 
-RTCSignaling.prototype.onopen = function() {
-	$("#open").innerHTML = "OPEN";
-}
-
-RTCSignaling.prototype.onclose = function() {
-	$("#open").innerHTML = "CLOSED";
-}
+RTCSignaling.prototype.onopen = function() {}
+RTCSignaling.prototype.onclose = function() {}
 
 RTCSignaling.prototype.realize = function() {
 	var that = this;

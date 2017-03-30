@@ -156,7 +156,6 @@ static void parse_requested_streams(SignalingWebSocketPeer* peer, Json::Value me
 static void parse_signaling_message(SignalingWebSocketPeer* peer, const char * msg) {
 	std::string message = std::string(msg, strlen(msg));
 
-//	printf("[MSG] %s\n", msg);
 	if(message == "realize") { peer->realize(); return; }
 
 	Json::Reader reader;
@@ -209,8 +208,6 @@ void SignalingWebSocketPeer::sendLocalSDP(std::string type, std::string sdp) {
 	Json::Value message;
 
 	message["type"] = type;
-
-	printf("SDP : \n%s\n", sdp.c_str());
 
 	if(sdp.length() > 800) {
 		for(int i=0; i<sdp.length(); i+=800) {

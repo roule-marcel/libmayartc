@@ -1,7 +1,7 @@
 #include <iostream>
 #include <signal.h>
 
-#include "util/websocket.h"
+#include "../util/websocket.h"
 
 class WebSocketPeer : public IWebSocketPeer {
 public:

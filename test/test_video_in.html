@@ -1,0 +1,22 @@
+<html>
+<body>
+	<script src="js/webrtcpp.js"></script>
+	<video id="video" width=640px height=480px autoplay></video>
+</body>
+<script>
+
+function $(sel) { return document.querySelector(sel); }
+
+var URI = document.location.hostname + ":10000";
+
+// Open the webrtc video_in channel called 'camera'
+webrtcpp_open_video_in(URI, 'camera', function(stream) {
+
+	// ... and display all frames in a video element
+	$("#video").src = URL.createObjectURL(stream);
+
+});
+
+
+</script>
+</html>

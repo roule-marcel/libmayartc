@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Kill any existing server
+SERVERPID=`lsof -i TCP:8000 | tail -n 1 | sed "s/  */ /g" | cut -f2 -d" "`
+kill -9 $SERVERPID
+
+
+cd `dirname $0`
+echo "Open a web browser and go to http://localhost:8000"
+
+python -m SimpleHTTPServer 8000 2>&1 >/dev/null &
+
+cd ../build
+./test_video_out
+

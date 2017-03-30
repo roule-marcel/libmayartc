@@ -45,21 +45,13 @@ bool RTCVideoStreamOut::write(const uint8_t* rgb) {
 
 RTCVideoStreamIn::RTCVideoStreamIn(const char* name) {
 	this->name = name;
-	w = h = 0;
 	renderer = new MemoryRenderer();
 	renderer->setFrameObserver(this);
 }
 
 void RTCVideoStreamIn::setStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
 	// TODO : Handle [0] out of bound
-	printf("STREAM !!\n");
 	stream->GetVideoTracks()[0]->AddOrUpdateSink(renderer, rtc::VideoSinkWants());
-}
-
-void RTCVideoStreamIn::setSize(uint32_t w, uint32_t h) {
-	this->w = w;
-	this->h = h;
-	renderer->setSize(w,h);
 }
 
 
