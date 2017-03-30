@@ -31,7 +31,7 @@ while(getline(&buf, &n, stdin)) {
 	webrtcpp_video_in_add_callback(camera, [&](const uint8_t* rgb, uint32_t w, uint32_t h) {
 		static int i=0;
 		printf("Recv frame %d (%dx%d)\n", i++, w, h);
-		// process RGB frame
+		// ... process RGB frame here ...
 	});
 ````
 
@@ -42,7 +42,7 @@ while(getline(&buf, &n, stdin)) {
 
 	uint8_t* bgr = new uint8_t[640*480*3];
 	for(int z=0; ; z++) {
-    // ... write something to the BGR frame here ...
+    		// ... write something to the BGR frame here ...
 		webrtcpp_video_out_write(fd, bgr);
 	}
 ````  
