@@ -19,6 +19,7 @@ char* buf = 0;
 size_t n = 0;
 while(getline(&buf, &n, stdin)) {
 	webrtcpp_write(fd, buf, n);
+	free(buf);
 	buf = 0; n = 0;
 }
 ````
